@@ -9,7 +9,7 @@
 ## Track status
 | Track | Scope | Status |
 |---|---|---|
-| A Engine | chunk/plan/schema/trace/check.mjs + unit tests | running (files appearing in tree; awaiting report) |
+| A Engine | chunk/plan/schema/trace/check.mjs + unit tests | modules DONE (38/38 tests); check.mjs corrupted by interruption → resumed agent repairing it |
 | B LLM+store | llm/prompts/store | DONE d50b50a — 53/53 harness PASS |
 | C UI | index.html/styles.css/main/render/views | running (index.html already modified; awaiting report) |
 | D Content | demo notes/syllabus/reference/README/LICENSE/docs | DONE 172128e — 117 PASS trace re-verification |
@@ -28,7 +28,8 @@
 ## Rejected approaches / failure log
 | Error | Attempt | Root cause | Decision |
 |---|---|---|---|
-| — | — | — | nothing logged yet |
+| scripts/check.mjs syntax FAIL (mid-file reorder) | Track A agent editing §11 checks | Agent interrupted by user mid-repair; file left inconsistent | Resumed Track A agent to reconstruct check.mjs only; engine modules + tests untouched (38/38 pass) |
+
 
 ## Notes
 - Demo bake (human step 4) may not happen → Track D contingency: hand-authored demo/numopt.notebook.json with traces actually executed; README/label must call it a sample notebook if not live-baked.
