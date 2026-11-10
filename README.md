@@ -2,10 +2,10 @@
 
 > *Exam-ready without picking up a pen.*
 
+<!-- HERO SCREENSHOT: add docs/setup.png (see docs/contents.md), then swap this comment
+     back to: ![Vertex setup screen](docs/setup.png)
+     Kept as a comment so the repo never renders a broken image before the capture. -->
 **NotebookLM knows your documents. Vertex knows your exam.**
-
-<!-- HERO SCREENSHOT PENDING: human to add docs/setup.png — see docs/contents.md -->
-![Vertex setup screen](docs/setup.png)
 
 **One-liner:** Paste your notes and syllabus. See what your notes leave out, reason through the tricky bits, and take a short revision sheet into your final study session.
 

@@ -13,7 +13,7 @@
 |---|---|---|
 | A Engine | chunk/plan/check.mjs + unit tests | DONE 4687b70 (baseline); check.mjs superseded by F below |
 | B LLM+store | llm/prompts/store | DONE d50b50a → P3-E 0daea78 (30/30 harness) |
-| C/W2 UI | index/styles/main/render/views | landed & browser-verified, report pending — all §5/§10 markers evidenced (see Verified) |
+| C/W2 UI | index/styles/main/render/views | LANDED + committed d669ede (report never delivered — files quiet, browser tail seen at 22:58; committed under Track-C "as landed" precedent; no new edits since, so nothing outstanding) |
 | D/F Content+validators | schema/check/demo | DONE 67a6e49 — check 35/35, tests 39/39→31/31 after trace-suite removal |
 
 ## Phase log
