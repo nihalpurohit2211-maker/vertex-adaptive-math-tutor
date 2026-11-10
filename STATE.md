@@ -1,10 +1,12 @@
 # STATE.md — single source of truth (orchestrator-maintained)
 
 ## Objectives
-- Ship Vertex per plan_2.md: notes+syllabus → coverage map → lessons with computed traces → one-page sheet. P0 only. Submit 23:30 IST, freeze 23:15.
+- ACTIVE GOAL (22:21 IST): execute plan3 (2).md as MAIN authority on conflicts; fix everything; don't stop until all checks+tests green.
+- Plan 3 = revision-pins + curated what-if scenarios + light UI + trace removal, on top of Plan 2 baseline.
+- Plan 2 baseline recorded: branch dev @ 4687b70; `node scripts/check.mjs` 30/31 (CSP pending Track C); `node tests/run.mjs` 38/38.
 
 ## Frozen contracts
-- CONTRACTS.md + src/contracts.js v1 (Phase 0, this commit). Tracks report changes; orchestrator edits.
+- CONTRACTS.md v1 + src/contracts.js; ADDENDUM v3 appended (pins, coverage labels, trace deprecation, demo isolation, §9 fixture byte-exact excerpts). plan3 wins conflicts.
 
 ## Track status
 | Track | Scope | Status |

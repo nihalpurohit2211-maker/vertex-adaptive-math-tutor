@@ -123,3 +123,39 @@ when false the UI shows exactly **"Illustrative example (not computed)"**.
 - Storage always try/catch. No empty catch blocks. No arbitrary sleeps.
 - `index.html` sets theme tokens from the existing app: `#121212 / #1E1E1E / #FF7A1A`.
 - CSP `<meta>` added last (Track C, before freeze) and tested.
+
+---
+
+# Addendum v3 (plan3 (2).md — authoritative on conflict with the above)
+
+## Pins (new, P0)
+- `Notebook.revisionPins: string[]` — ordered array of existing topic IDs. Missing → `[]` (legacy default).
+- store.js (Track B3) exports: `normalizePins(arr, notebook)` (drop unknown IDs + duplicates, keep first valid occurrence; non-arrays → `[]`), `togglePin(nbId, topicId)` (append once / remove), `movePin(nbId, topicId, delta)` (swap adjacent, no-op at boundaries), `getPins(nbId) -> string[]`. Pins persist via the SAME serialization path as saveNotebook; export/import preserve valid pins, drop stale IDs safely.
+- Pins change ONLY the revision sheet. Scenario choices are page state only — never persisted, never affect coverage/priority/export.
+
+## Coverage labels (UI mapping only; internal values unchanged)
+- `covered` → **Explained**, `thin` → **Only mentioned**, `not_found` → **No match found** (+ "No matching passage in these notes." on rows). Chips carry text + icon (grayscale-safe). Retrieval thresholds are NOT re-tuned to the fixture; the curated demo carries reviewed stored statuses.
+
+## Trace deprecation
+- Removed from product flow: lesson prompts (no `trace.code` clause), UI, print, active demo notebook, demo JSON. `trace.js`/`trace.worker.js` deleted once no caller imports them (after UI wave).
+- Import boundary: legacy notebooks with `lesson.trace` import safely; `trace` and trace-only fields are DISCARDED before render. `validateLesson` accepts lessons with or without `trace` (ignored).
+- check.mjs: trace re-verification replaced by content/revision checks — §9 fixture snippets byte-for-byte present in demo notes; demo notebook contains zero `trace.code`; pins round-trip + normalization; citations still verified against stored chunks.
+
+## Demo isolation
+- Demo uses its own notebook id (the baked JSON's id). First open initializes `revisionPins: []`; reopening restores demo pins from store; reset affects only the demo notebook id. User notebooks untouched.
+
+## v3 fixture authority (plan3 §9) — exact excerpt strings the demo notes must contain byte-for-byte
+| Topic | Status | Exact excerpt |
+|---|---|---|
+| Gradient descent | Explained | Use the negative gradient as the downhill direction. The learning rate controls the step size. A step that is too large can overshoot the minimum. |
+| Newton's method | Explained | Use the gradient and local curvature to choose an update. In one dimension the Newton update divides the derivative by the second derivative when that curvature is usable. |
+| Armijo line search | Only mentioned | Armijo = sufficient decrease. Need to revise the condition. |
+| Quasi-Newton / BFGS | Only mentioned | BFGS updates a Hessian approximation using changes in position and gradient. |
+| Gram–Schmidt | No match found | (none) |
+| Conjugate gradient | No match found | (none) |
+
+Six topics, six syllabus labels, demo order as above; keep existing stable topic IDs. Lesson card copy per §9 table: **The idea** → opening text, **What to remember** → takeaway; labelled "Vertex explanation". Hero lesson scenarios (§3 A/B) are curated content shipped in the demo JSON, not LLM output.
+
+## Routes
+Unchanged: `#/setup`, `#/map`, `#/lesson/:topicId`, `#/sheet`. Stale topicId → map + "That topic is unavailable in this notebook."; no active notebook → setup.
+
