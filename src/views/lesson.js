@@ -234,6 +234,12 @@ export async function render(container, ctx, topicId) {
         scCard.appendChild(rightCol);
       }
 
+      // Per-topic files (Addendum v6) close with a takeaway to pin; the legacy
+      // gradient-descent hero keeps its exact shipped rendering.
+      if (sc.takeaway && !isGradientDescent(topic)) {
+        scCard.appendChild(h('p', { class: 'scenario-setup scenario-takeaway' }, [h('strong', { text: 'Takeaway to pin: ' }), sc.takeaway]));
+      }
+
       const navRow = h('div', { class: 'btn-row scenario-nav' });
       if (current < scenarios.length - 1) {
         const next = h('button', { type: 'button', class: 'btn btn-primary btn-sm', text: 'Next scenario' });
