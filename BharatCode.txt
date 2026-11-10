@@ -1,5 +1,5 @@
 Vertex - exam-ready notes (public GitHub repo for the hackathon submission).
 
-Uses the BharatCode model API (qwen-3.8-27b / deepseek-v4.1-flash) for topic mapping, lessons and narration.
+Uses the BharatCode model API (qwen-3.8-27b / deepseek-v4.1-flash) for topic mapping and short explanations on your own notes.
 
 NOTE FOR HUMAN (task T6): the exact wording the event page requires in this file must be confirmed on the official event page BEFORE submitting; update this file to match if it differs.
