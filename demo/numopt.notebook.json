@@ -122,6 +122,15 @@
           "provider": "curated",
           "model": "curated",
           "at": "2026-11-10T23:40:00.000Z"
+        },
+        "sheet": {
+          "takeaway": "Move in the direction that lowers the function nearby.",
+          "formula": "x_{k+1}=x_k-\\alpha_k\\nabla f(x_k)",
+          "formulaFallback": "xₖ₊₁ = xₖ − αₖ ∇f(xₖ)",
+          "notes": [
+            "αₖ controls how far you move.",
+            "A small step can be slow. A large step can overshoot."
+          ]
         }
       }
     },
@@ -290,6 +299,15 @@
           "provider": "curated",
           "model": "curated",
           "at": "2026-11-10T23:40:00.000Z"
+        },
+        "sheet": {
+          "takeaway": "Accept a step only when it drops the value enough for its slope and length.",
+          "formula": "f(x_k+\\alpha_k p_k)\\le f(x_k)+c\\,\\alpha_k\\,\\nabla f(x_k)^{\\top}p_k",
+          "formulaFallback": "f(xₖ + αₖpₖ) ≤ f(xₖ) + c·αₖ·∇f(xₖ)ᵀpₖ",
+          "notes": [
+            "A tiny decrease can still fail the test.",
+            "Backtracking shrinks α until the test passes."
+          ]
         }
       }
     },
@@ -377,6 +395,15 @@
           "provider": "curated",
           "model": "curated",
           "at": "2026-11-10T23:40:00.000Z"
+        },
+        "sheet": {
+          "takeaway": "Keep an inverse-curvature stand-in and re-fit it from observed steps.",
+          "formula": "d_k=-H_k\\nabla f(x_k),\\qquad x_{k+1}=x_k+\\alpha_k d_k",
+          "formulaFallback": "dₖ = −Hₖ ∇f(xₖ),  xₖ₊₁ = xₖ + αₖdₖ",
+          "notes": [
+            "Hₖ approximates the inverse Hessian — never invert the true one.",
+            "Each update reuses one secant observation; yₖᵀsₖ > 0 keeps steps downhill."
+          ]
         }
       }
     },

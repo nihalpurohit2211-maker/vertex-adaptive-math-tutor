@@ -49,3 +49,11 @@
 - Demo bake (human step 4) may not happen → Track D contingency: hand-authored demo/numopt.notebook.json with traces actually executed; README/label must call it a sample notebook if not live-baked.
 - Retired files (app.js, chat.js, data/, verify.mjs) deleted at Phase 2, after new index.html lands.
 - d9 solo; old chat.js 3000 ms timeout replaced by 60 s abort per §6.3.
+
+## W4/W5 resolution (23:48 IST)
+- W2 final report ARRIVED: map.js openNode fix = W2-verified (both breakpoints) → committed separately.
+- W4 (lesson-math KaTeX-CDN wave) found still writing mid-session with scope the user SUPERSEDED (page-wide $-scanning + CDN + relaxed CSP). Stopped; its index.html/render.js edits reverted (verified: no CDN katex, CSP unchanged); schema.js kept only my sheet edits.
+- W5 SHIPPED INLINE per user spec: scan-ready sheet cards (heading + 1-sentence takeaway + ONE vendored-KaTeX formula + ≤2 notes + verbatim "View original notes" <details> no-print). KaTeX 0.16.22 vendored vendor/katex (script+css+fonts, zero CDN for math, CSP untouched — browser proved no violations). Optional lesson.sheet block (Addendum v4, CONTRACTS.md); exact GD card copy frozen in check.mjs; t3/t4 formulas added ("d = -H times grad" replaced by d_k=-H_k∇f(x_k)); legacy cards (t2/t5/t6, pre-v4 notebooks) render title+takeaway.
+- Browser evidence @8766: 4 pins incl. legacy Newton; katexCount 3, zero raw LaTeX/backslashes in visible text; disclosure typeset (no "## ") + no-print; 360px iframe: no sideways scroll, formula overflow-x auto; print iframe (media flipped): 724px ≤ 1032, controls+details hidden, black on white, 16px math; malformed 'x_{' + empty formula → Unicode fallback with single console warn; network: katex css+woff2 all localhost.
+- Gates: check.mjs 37/37 (2 new rows), tests 35/35 (+4 sheet cases). README sheet bullet synced.
+- Human checklist unchanged (+ still: GitHub repo/push, key T1–T4, retired-file approval, browser-pane screenshots).

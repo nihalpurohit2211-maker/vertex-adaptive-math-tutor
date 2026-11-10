@@ -1,13 +1,17 @@
 /**
  * render.js — the ONLY module in Vertex that touches `innerHTML`, and only
- * with DOMPurify-sanitized strings (plan3 §6.8). It is also the only module
- * that loads CDN libraries: pinned versions + real SRI hashes +
- * crossorigin="anonymous". Every load failure degrades to plain text —
- * never a blank screen, never raw model HTML.
+ * with DOMPurify-sanitized strings (plan3 §6.8). It owns every third-party
+ * load: two CDN libraries (marked + DOMPurify — pinned versions, real SRI
+ * hashes, crossorigin="anonymous") and the vendored KaTeX under
+ * vendor/katex/ (same-origin: no CDN, no SRI, demo works offline). Every
+ * load failure degrades to plain text — never a blank screen, never raw
+ * model HTML.
  *
  * Pipeline for model/note markdown:  marked.parse → DOMPurify.sanitize → DOM.
- * plan3 removed KaTeX, Mermaid and trace plots from the product flow, so this
- * module loads exactly two CDN libraries: marked and DOMPurify.
+ * Math has one narrow entry point (Addendum v4): renderFormula() passes ONE
+ * stored LaTeX string from lesson.sheet to katex.render — the page is never
+ * scanned for $ delimiters and model output is never fed to KaTeX.
+ * plan3 removed Mermaid and trace plots from the product flow.
  * Authored SVG (the concept sketch) is built with document.createElementNS —
  * static markup, never model text — so it needs no sanitizing pass.
  */
@@ -101,6 +105,74 @@ export async function renderSafeMarkdown(el, md) {
   const tmp = document.createElement('div');
   tmp.innerHTML = clean; // the only innerHTML sink for model text, post-sanitize
   while (tmp.firstChild) el.appendChild(tmp.firstChild);
+  return el;
+}
+
+/* ---------------------------------------------------------------------- */
+/* Math (Addendum v4) — vendored KaTeX, one stored formula at a time       */
+/* ---------------------------------------------------------------------- */
+
+// KaTeX 0.16.22 served from vendor/katex/ (npm dist, unmodified): script +
+// stylesheet + fonts/ all same-origin, so CSP needs no third-party entry
+// and the demo makes zero external requests for math.
+const VENDOR = Object.freeze({
+  katex: {
+    global: 'katex',
+    script: 'vendor/katex/katex.min.js',
+    stylesheet: 'vendor/katex/katex.min.css',
+  },
+});
+
+let katexPromise = null;
+function loadKatex() {
+  if (!katexPromise) {
+    katexPromise = new Promise((resolve) => {
+      if (typeof window.katex !== 'undefined') { resolve(true); return; }
+      const link = document.createElement('link');
+      link.rel = 'stylesheet';
+      link.href = VENDOR.katex.stylesheet;
+      document.head.appendChild(link);
+      const node = document.createElement('script');
+      node.src = VENDOR.katex.script;
+      node.async = true;
+      node.onload = () => resolve(typeof window.katex !== 'undefined');
+      node.onerror = () => resolve(false);
+      document.head.appendChild(node);
+    });
+  }
+  return katexPromise;
+}
+
+/**
+ * renderFormula(el, latex, fallbackText) — the ONLY math entry point.
+ * Renders one stored string (lesson.sheet.formula) with katex.render in
+ * displayMode; throwOnError:true, and any failure — bad LaTeX, KaTeX not
+ * loadable — shows the readable Unicode fallback as plain text. Never
+ * regex-scans prose, never renders model output, never injects HTML.
+ */
+export async function renderFormula(el, latex, fallbackText) {
+  const fb = typeof fallbackText === 'string' ? fallbackText : '';
+  el.replaceChildren();
+  if (typeof latex !== 'string' || !latex.trim()) {
+    el.textContent = fb;
+    el.classList.add('formula-fallback');
+    return el;
+  }
+  const ok = await loadKatex();
+  if (!ok) {
+    el.textContent = fb;
+    el.classList.add('formula-fallback');
+    return el;
+  }
+  try {
+    window.katex.render(latex, el, { displayMode: true, throwOnError: true, trust: false });
+    el.classList.add('formula-rendered');
+  } catch (err) {
+    console.warn('render.js: KaTeX could not render the stored formula —', err.message);
+    el.replaceChildren();
+    el.textContent = fb;
+    el.classList.add('formula-fallback');
+  }
   return el;
 }
 

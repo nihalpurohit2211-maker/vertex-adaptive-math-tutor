@@ -225,4 +225,48 @@ export const cases = [
       assert.equal(out.trace.code, lesson.trace.code);
     },
   },
+  // ---- Addendum v4: optional lesson.sheet block ----
+  {
+    name: "validateLesson: absent sheet stays valid (legacy lessons)",
+    fn: () => {
+      assert.equal(validateLesson(goodLesson(), "numeric"), true);
+    },
+  },
+  {
+    name: "validateLesson: well-formed sheet accepted",
+    fn: () => {
+      const lesson = goodLesson({
+        sheet: {
+          takeaway: "Move in the direction that lowers the function nearby.",
+          formula: "x_{k+1}=x_k-\\alpha_k\\nabla f(x_k)",
+          formulaFallback: "xₖ₊₁ = xₖ − αₖ ∇f(xₖ)",
+          notes: ["αₖ controls how far you move.", "A small step can be slow. A large step can overshoot."],
+        },
+      });
+      assert.equal(validateLesson(lesson, "numeric"), true);
+    },
+  },
+  {
+    name: "validateLesson: sheet rejects >2 notes, empty strings, non-object",
+    fn: () => {
+      const tooMany = validateLesson(goodLesson({ sheet: { notes: ["a", "b", "c"] } }), "numeric");
+      assert.ok(Array.isArray(tooMany) && tooMany.some((e) => e.startsWith("sheet.notes")));
+      const emptyFormula = validateLesson(goodLesson({ sheet: { formula: "  " } }), "numeric");
+      assert.ok(Array.isArray(emptyFormula) && emptyFormula.some((e) => e.startsWith("sheet.formula")));
+      const notObject = validateLesson(goodLesson({ sheet: ["x"] }), "numeric");
+      assert.ok(Array.isArray(notObject) && notObject.some((e) => e.startsWith("sheet:")));
+    },
+  },
+  {
+    name: "enforceCitations: sheet passes through, notes trimmed to 2 strings",
+    fn: () => {
+      const lesson = goodLesson({
+        sheet: { takeaway: "Short card line.", formula: "a=b", formulaFallback: "a = b", notes: ["one", "two", 3, "four"] },
+      });
+      const out = enforceCitations(lesson, CHUNKS, { status: "thin", score: 0.5, chunkIds: ["c1"] });
+      assert.equal(out.sheet.takeaway, "Short card line.");
+      assert.equal(out.sheet.formula, "a=b");
+      assert.deepEqual(out.sheet.notes, ["one", "two"]);
+    },
+  },
 ];

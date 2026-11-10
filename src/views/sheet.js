@@ -1,25 +1,45 @@
 /**
- * views/sheet.js — Screen 4 (plan3 §10): cards in store.getPins order;
- * each card = topic name + takeaway + short distinction where the lesson
- * supplies one. Controls per card: Move up / Move down / Remove, disabled
- * at boundaries. Empty state is exactly "Pin a topic from any lesson to
- * start your sheet" with a link back to the map, and "Print / Save as PDF"
- * stays hidden in the empty state. The print stylesheet renders only the
- * sheet title + cards (A4 portrait, black on white, ~12 mm margins, no
- * card split across pages).
+ * views/sheet.js — Screen 4 (plan3 §10 + Addendum v4): cards in
+ * store.getPins order; each card = real heading + one-sentence takeaway +
+ * ONE formula (vendored KaTeX via renderFormula; Unicode fallback on any
+ * failure) + up to two short notes + a <details> "View original notes"
+ * disclosure holding the cited note passages VERBATIM (no-print — never in
+ * the A4 output). Cards for lessons without a sheet block render title +
+ * takeaway normally; long equations scroll inside their own block so the
+ * 360px page itself never scrolls sideways. Empty state is exactly "Pin a
+ * topic from any lesson to start your sheet" with a link back to the map,
+ * and "Print / Save as PDF" stays hidden in the empty state. The print
+ * stylesheet renders only the sheet title + cards (A4 portrait, black on
+ * white, ~12 mm margins, no card split across pages).
  */
 import { ROUTES } from '../contracts.js';
+import { renderFormula } from '../render.js';
 
-function cardLines(topic) {
+/** Markdown syntax never belongs in card text — strip it where the card is built. */
+function plainText(s) {
+  return String(s ?? '')
+    .replace(/^\s*#{1,6}\s+/gm, '')
+    .replace(/\*\*([^*]+)\*\*/g, '$1')
+    .replace(/__([^_]+)__/g, '$1')
+    .replace(/`([^`]+)`/g, '$1')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function cardModel(topic, chunks) {
   const lesson = topic.lesson || {};
-  const takeaway = lesson.takeaway
-    || lesson.oneLiner
-    || (Array.isArray(lesson.steps) && lesson.steps.length ? (lesson.steps[0].text || String(lesson.steps[0])) : '')
+  const sheet = lesson.sheet && typeof lesson.sheet === 'object' && !Array.isArray(lesson.sheet) ? lesson.sheet : {};
+  const takeaway = plainText(sheet.takeaway)
+    || plainText(lesson.takeaway || lesson.oneLiner)
     || 'Open the lesson to add a takeaway.';
-  const distinction = lesson.distinction
-    || (Array.isArray(lesson.pitfalls) && lesson.pitfalls.length ? (lesson.pitfalls[0].text || String(lesson.pitfalls[0])) : '')
-    || (lesson.examQuestion && lesson.examQuestion.q ? 'Revisit: ' + lesson.examQuestion.q : '');
-  return { takeaway, distinction };
+  const notes = (Array.isArray(sheet.notes) ? sheet.notes : []).map(plainText).filter(Boolean).slice(0, 2);
+  const formula = typeof sheet.formula === 'string' && sheet.formula.trim() ? sheet.formula : null;
+  const formulaFallback = typeof sheet.formulaFallback === 'string' ? sheet.formulaFallback : '';
+  const cov = topic.coverage || {};
+  const originals = cov.status === 'not_found' ? [] : (cov.chunkIds || [])
+    .map((id) => chunks.find((c) => c && c.id === id))
+    .filter(Boolean);
+  return { takeaway, notes, formula, formulaFallback, originals };
 }
 
 export async function render(container, ctx) {
@@ -39,6 +59,7 @@ export async function render(container, ctx) {
 
   const pins = actions.getPins();
   const byId = new Map(nb.topics.map((t) => [t.id, t]));
+  const chunks = (nb.notes && nb.notes.chunks) || [];
 
   /* ---- on-screen controls (never printed) ---- */
   const controls = h('div', { class: 'sheet-controls no-print' });
@@ -91,15 +112,37 @@ export async function render(container, ctx) {
   pins.forEach((topicId, i) => {
     const topic = byId.get(topicId);
     if (!topic) return; // getPins normalized — belt for re-render races
-    const { takeaway, distinction } = cardLines(topic);
+    const { takeaway, notes, formula, formulaFallback, originals } = cardModel(topic, chunks);
 
     const cardEl = h('section', { class: 'sheet-card' });
     cardEl.appendChild(h('h2', { class: 'sheet-card-name', text: topic.name }));
     cardEl.appendChild(h('p', { class: 'sheet-card-takeaway', text: takeaway }));
-    if (distinction) cardEl.appendChild(h('p', { class: 'sheet-card-distinction' }, [
-      h('strong', { text: 'Remember: ' }),
-      distinction,
-    ]));
+
+    if (formula) {
+      const formulaEl = h('div', { class: 'sheet-card-formula' });
+      cardEl.appendChild(formulaEl);
+      // Rendered after mount; the same DOM is what print uses. KaTeX or the
+      // Unicode fallback — never raw LaTeX on a failure path.
+      void renderFormula(formulaEl, formula, formulaFallback);
+    }
+    if (notes.length) {
+      const ul = h('ul', { class: 'sheet-card-notes' });
+      for (const n of notes) ul.appendChild(h('li', { text: n }));
+      cardEl.appendChild(ul);
+    }
+    if (originals.length) {
+      const details = h('details', { class: 'sheet-original no-print' });
+      details.appendChild(h('summary', { text: 'View original notes' }));
+      for (const c of originals) {
+        const quote = h('blockquote', { class: 'sheet-original-text' });
+        details.appendChild(quote);
+        // Verbatim source string through the repo's sanitized markdown path
+        // (marked -> DOMPurify), so headings read as headings. Plain-text
+        // fallback if the libraries are unavailable.
+        void ctx.rmd(quote, c.text);
+      }
+      cardEl.appendChild(details);
+    }
 
     const cardControls = h('div', { class: 'sheet-card-controls no-print' });
     const up = h('button', { type: 'button', class: 'btn btn-ghost btn-sm', text: 'Move up', disabled: i === 0 });

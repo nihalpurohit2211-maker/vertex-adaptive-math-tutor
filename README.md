@@ -17,7 +17,7 @@
 - **Missed-the-lecture lessons** — a two-minute card per topic: the idea in two sentences, what your notes say, what's missing. Exact excerpts are labelled *From your notes*; added context is labelled *Vertex explanation*.
 - **"What would you do?" walkthroughs** — short engineering decisions (e.g. gradient descent overshooting, a tiny decrease that still fails Armijo). Pick, change your mind, or reveal the reasoning directly — for reflection, not scoring. No streaks, no grades, no red failure states.
 - **Revision pins** — pin any point from a lesson; pins are yours: reorder, remove, they persist across reload, and **only your pins** build the sheet.
-- **One-page revision sheet** — pinned topics as heading + takeaway + one distinction, printed black-on-white A4 via Print → Save as PDF.
+- **One-page revision sheet** — pinned topics as heading + one-sentence takeaway + the key equation (typeset by KaTeX served with the app — no CDN for math; readable Unicode fallback if rendering ever fails) + up to two short notes, printed black-on-white A4 via Print → Save as PDF. The exact original passage stays on-screen behind "View original notes" and is never printed.
 
 ## How it differs from NotebookLM (honest)
 

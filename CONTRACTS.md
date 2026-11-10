@@ -159,3 +159,32 @@ Six topics, six syllabus labels, demo order as above; keep existing stable topic
 ## Routes
 Unchanged: `#/setup`, `#/map`, `#/lesson/:topicId`, `#/sheet`. Stale topicId → map + "That topic is unavailable in this notebook."; no active notebook → setup.
 
+
+---
+
+# Addendum v4 — scan-ready revision cards (supersedes any v3 wording it touches; plan3 remains authority elsewhere)
+
+## Optional `lesson.sheet` block (schema.js validates; enforceCitations passes through)
+`sheet: { takeaway?, formula?, formulaFallback?, notes? }` — authored card copy only, never model output.
+`takeaway` one sentence; `formula` one LaTeX string (backslash-escaped in JSON); `formulaFallback`
+the same equation readable as plain Unicode; `notes` at most 2 short strings. Lessons without a
+`sheet` render title + takeaway on the legacy card path. In the curated demo, `sheet` exists on
+t1/t3/t4 only (exact GD card copy frozen in scripts/check.mjs); `lesson.takeaway` itself stays
+byte-identical to the §9 "What to remember" table.
+
+## Sheet card structure (views/sheet.js)
+heading (`h2`, topic name) → one-sentence takeaway → ONE formula → ≤2 short notes →
+`<details class="sheet-original no-print">` "View original notes" holding the cited note chunks
+VERBATIM (text nodes; excluded from print). Card text is markdown-stripped where the card is
+built; the old "Remember:" pitfall paragraph is gone from cards.
+
+## Math rendering (render.js — single entry point)
+`renderFormula(el, latex, fallback)` loads KaTeX 0.16.22 VENDORED at `vendor/katex/`
+(same-origin script + css + fonts — zero CDN for the demo, CSP unchanged) and calls
+`katex.render(latex, el, { displayMode: true, throwOnError: true, trust: false })` after mount.
+Any failure (bad LaTeX, script blocked) shows `formulaFallback` as plain text. No page-wide math
+scanning, no second math library, no equation images. The same DOM is used by print.
+
+## Print + mobile
+A4 portrait rules unchanged; formula blocks `overflow-x: auto` on screen (page itself never
+scrolls sideways at 360px) and `overflow: visible` in print; disclosures and controls stay hidden.

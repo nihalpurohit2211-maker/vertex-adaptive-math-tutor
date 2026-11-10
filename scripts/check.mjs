@@ -706,6 +706,69 @@ if (indexHtml === null) {
   );
 }
 
+// ---- 15. Addendum v4 — vendored KaTeX + scan-ready sheet cards ----------------
+{
+  const v4Errors = [];
+  for (const f of ["vendor/katex/katex.min.js", "vendor/katex/katex.min.css"]) {
+    if (!fs.existsSync(path.join(ROOT, f))) v4Errors.push(f + " missing (must be served with the app — no CDN)");
+  }
+  let woff2 = 0;
+  try {
+    woff2 = fs.readdirSync(path.join(ROOT, "vendor/katex/fonts")).filter((n) => n.endsWith(".woff2")).length;
+  } catch (err) {
+    void err;
+  }
+  if (woff2 < 20) v4Errors.push(`vendor/katex/fonts: expected the full woff2 set (>=20), got ${woff2}`);
+  const idx = readText("index.html") || "";
+  if (/katex/i.test(idx)) v4Errors.push("index.html must not load KaTeX from a CDN (vendored under vendor/katex/)");
+  const rend = readText("src/render.js") || "";
+  if (!rend.includes("vendor/katex/katex.min.js")) v4Errors.push("src/render.js must load the vendored katex script");
+  if (!/katex\.render\(/.test(rend) || !rend.includes("displayMode: true") || !rend.includes("throwOnError: true")) {
+    v4Errors.push("render.js must call katex.render with displayMode:true and throwOnError:true (fallback path must catch)");
+  }
+  add("KaTeX vendored (same-origin, zero CDN math)", v4Errors.length === 0, v4Errors.join("; "));
+}
+{
+  const cardErrors = [];
+  const BS = String.fromCharCode(92);
+  const wantSheet = {
+    t1: {
+      takeaway: "Move in the direction that lowers the function nearby.",
+      formula: "x_{k+1}=x_k-" + BS + "alpha_k" + BS + "nabla f(x_k)",
+      formulaFallback: "xₖ₊₁ = xₖ − αₖ ∇f(xₖ)",
+      notes: ["αₖ controls how far you move.", "A small step can be slow. A large step can overshoot."],
+    },
+  };
+  const topics = Array.isArray(notebook?.topics) ? notebook.topics : [];
+  for (const [id, want] of Object.entries(wantSheet)) {
+    const t = topics.find((x) => x && x.id === id);
+    const sh = t?.lesson?.sheet;
+    if (!sh) { cardErrors.push(`${id}: lesson.sheet missing`); continue; }
+    if (sh.takeaway !== want.takeaway) cardErrors.push(`${id}: sheet.takeaway must be the exact card copy (got ${JSON.stringify(sh.takeaway)})`);
+    if (sh.formula !== want.formula) cardErrors.push(`${id}: sheet.formula must be the exact LaTeX (got ${JSON.stringify(sh.formula)})`);
+    if (sh.formulaFallback !== want.formulaFallback) cardErrors.push(`${id}: sheet.formulaFallback must be the exact Unicode fallback`);
+    if (JSON.stringify(sh.notes) !== JSON.stringify(want.notes)) cardErrors.push(`${id}: sheet.notes must match the exact two notes`);
+  }
+  for (const id of ["t3", "t4"]) {
+    const sh = topics.find((x) => x && x.id === id)?.lesson?.sheet;
+    if (!sh) { cardErrors.push(`${id}: lesson.sheet missing (Armijo and BFGS cards)`); continue; }
+    for (const key of ["takeaway", "formula", "formulaFallback"]) {
+      if (typeof sh[key] !== "string" || !sh[key].trim()) cardErrors.push(`${id}: sheet.${key} must be a non-empty string`);
+    }
+    if (!Array.isArray(sh.notes) || sh.notes.length < 1 || sh.notes.length > 2) cardErrors.push(`${id}: sheet.notes must hold 1-2 notes`);
+    if (!sh.formula.includes(BS)) cardErrors.push(`${id}: sheet.formula must contain real LaTeX commands (backslashes lost?)`);
+  }
+  for (const id of ["t2", "t5", "t6"]) {
+    const sh = topics.find((x) => x && x.id === id)?.lesson?.sheet;
+    if (sh) cardErrors.push(`${id}: must NOT carry a sheet block (legacy card path — exercises the no-formula fallback)`);
+  }
+  const sheetView = readText("src/views/sheet.js") || "";
+  if (!sheetView.includes("renderFormula")) cardErrors.push("sheet.js must render formulas through src/render.js renderFormula");
+  if (!sheetView.includes("View original notes")) cardErrors.push("sheet.js must keep the verbatim disclosure labelled \"View original notes\"");
+  if (!/sheet-original[^"']*no-print|no-print[^"']*sheet-original/.test(sheetView)) cardErrors.push("the disclosure must carry no-print (verbatim passage stays out of the A4 sheet)");
+  add("sheet-card fixture + wiring (Addendum v4)", cardErrors.length === 0, cardErrors.join("; "));
+}
+
 // ---- Report -------------------------------------------------------------------------
 const nameWidth = Math.min(66, Math.max(...rows.map((r) => r.name.length)));
 console.log("\nVertex QA — scripts/check.mjs (plan3 §9/§10 content + revision checks)\n" + "-".repeat(nameWidth + 10));

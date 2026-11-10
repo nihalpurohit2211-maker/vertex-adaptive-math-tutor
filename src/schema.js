@@ -174,6 +174,28 @@ export function validateLesson(obj, topicKind) {
     errors.push("diagramMermaid: must be null or a string");
   }
 
+  // Addendum v4: optional `sheet` block — scan-ready revision-card content
+  // (one-sentence takeaway, one formula + readable fallback, <= 2 notes).
+  // Lessons without it render title + takeaway on the legacy card path.
+  if (obj.sheet !== undefined && obj.sheet !== null) {
+    if (typeof obj.sheet !== "object" || Array.isArray(obj.sheet)) {
+      errors.push("sheet: must be an object { takeaway?, formula?, formulaFallback?, notes? }");
+    } else {
+      for (const key of ["takeaway", "formula", "formulaFallback"]) {
+        if (obj.sheet[key] !== undefined && obj.sheet[key] !== null && !isStr(obj.sheet[key])) {
+          errors.push("sheet." + key + ": must be a non-empty string when present");
+        }
+      }
+      if (obj.sheet.notes !== undefined && obj.sheet.notes !== null) {
+        if (!isStringArray(obj.sheet.notes)) {
+          errors.push("sheet.notes: must be an array of strings");
+        } else if (obj.sheet.notes.length > 2) {
+          errors.push("sheet.notes: at most 2 notes (got " + obj.sheet.notes.length + ")");
+        }
+      }
+    }
+  }
+
   if (!obj.examQuestion || typeof obj.examQuestion !== "object") {
     errors.push("examQuestion: must be present: { q, modelAnswer, source }");
   } else {
@@ -267,7 +289,7 @@ export function enforceCitations(lesson, chunks, coverage) {
     examSource = "vertex";
   }
 
-  return {
+  const out = {
     oneLiner: typeof src.oneLiner === "string" ? src.oneLiner : "",
     why: typeof src.why === "string" ? src.why : "",
     analogy: typeof src.analogy === "string" ? src.analogy : "",
@@ -285,4 +307,13 @@ export function enforceCitations(lesson, chunks, coverage) {
     },
     meta: src.meta && typeof src.meta === "object" ? { ...src.meta } : { provider: "", model: "", at: "" },
   };
+  // Addendum v4: the optional `sheet` block is authored content, not a cited
+  // claim — pass it through (notes trimmed to strings, max 2) so live-path
+  // round-trips keep the card data.
+  if (src.sheet && typeof src.sheet === "object" && !Array.isArray(src.sheet)) {
+    const sheet = { ...src.sheet };
+    if (Array.isArray(sheet.notes)) sheet.notes = sheet.notes.filter((n) => typeof n === "string").slice(0, 2);
+    out.sheet = sheet;
+  }
+  return out;
 }
