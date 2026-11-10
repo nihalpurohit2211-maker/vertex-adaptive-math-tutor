@@ -1,0 +1,62 @@
+{
+  "id": "numopt-scenarios-t5-v1",
+  "notebookId": "nb-numopt-demo",
+  "topicId": "t5",
+  "title": "Two vectors, almost one direction. Where is the new information?",
+  "source": "curated",
+  "usage": "Reviewed exam-eve scenario content. Plain-text explanations only; the concept sketch is hand-authored static SVG rendered from the description below. Scenario choices are page state and never modify coverage, pins, priority, or exported notebook data.",
+  "scenarios": [
+    {
+      "id": "gs-A",
+      "heading": "Scenario A · Nearly parallel vectors",
+      "setup": "You are running Gram–Schmidt and your two basis vectors are nearly parallel. The second vector carries almost no new information, because most of it just repeats the first direction. You want only the part that is genuinely new.",
+      "prompt": "What makes the second direction genuinely new?",
+      "choices": [
+        {
+          "id": "a1",
+          "label": "Keep it unchanged",
+          "reveal": "Almost all of the vector still points along the first direction, so the pair is nearly dependent. The genuinely new part has not been isolated from the overlap.",
+          "highlight": "long"
+        },
+        {
+          "id": "a2",
+          "label": "Reverse it",
+          "reveal": "Flipping the sign keeps the same line and the same overlap with the first direction. Reversal changes orientation, not information."
+        },
+        {
+          "id": "a3",
+          "label": "Subtract its projection onto the first direction",
+          "reveal": "u2 equals v2 minus the projection of v2 onto u1, and that residual is orthogonal to u1. What remains is precisely the part the first direction did not already carry, which is the genuinely new direction.",
+          "recommended": true,
+          "highlight": "short"
+        }
+      ],
+      "visual": {
+        "kind": "gram-schmidt",
+        "label": "Concept sketch",
+        "description": "A hand-authored, qualitative sketch of two nearly parallel vectors drawn from a shared origin, labelled v1 and v2. A dashed segment labelled \"Projection of v2 onto u1\" lies along the first direction and marks the part that repeats old information. A solid segment labelled \"Residual\" closes the triangle from the tip of the projection to the tip of v2, perpendicular to the first direction. A unit-circle arc at the origin shows the normalize step that scales the residual to length one. Diagram labels stay readable as text on mobile; dashed versus solid lines carry the distinction as well as colour.",
+        "screenReaderSummary": "Concept sketch: two nearly parallel vectors split into a dashed projection that repeats the first direction and a solid perpendicular residual that is genuinely new, with a unit-circle mark for the normalize step."
+      }
+    },
+    {
+      "id": "gs-B",
+      "heading": "Scenario B · Normalize after",
+      "setup": "Your vectors are now orthogonal: every pair has dot product zero. But the Q in a QR factorization must be orthonormal, not merely orthogonal.",
+      "prompt": "What is left to do?",
+      "choices": [
+        {
+          "id": "b1",
+          "label": "Nothing, orthogonality is enough.",
+          "reveal": "Orthogonality fixes the directions but says nothing about lengths, and Q is required to have unit-length columns. The factorization is not finished until the scaling is done."
+        },
+        {
+          "id": "b2",
+          "label": "Divide each vector by its own norm.",
+          "reveal": "Dividing by its own norm keeps the direction and the orthogonality while setting the length to one. That turns the orthogonal set into the orthonormal columns QR needs.",
+          "recommended": true
+        }
+      ],
+      "takeaway": "Orthogonal adds new information; unit length keeps the basis standard."
+    }
+  ]
+}

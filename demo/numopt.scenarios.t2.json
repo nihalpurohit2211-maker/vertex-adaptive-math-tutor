@@ -1,0 +1,62 @@
+{
+  "id": "numopt-scenarios-t2-v1",
+  "notebookId": "nb-numopt-demo",
+  "topicId": "t2",
+  "title": "The curvature was tiny. The step was not.",
+  "source": "curated",
+  "usage": "Reviewed exam-eve walkthrough content. Plain-text explanations only; the concept sketch is hand-authored SVG, described below. Scenario choices are page state and never modify coverage, pins, priority, or exported notebook data.",
+  "scenarios": [
+    {
+      "id": "newton-A",
+      "heading": "Scenario A · Flat curvature blowup",
+      "setup": "You are running Newton's method and the iterates have drifted into a nearly flat region. The slope there is small but nonzero, and the curvature is smaller still. The raw update lands far outside anywhere you have been.",
+      "prompt": "What would you do with this step?",
+      "choices": [
+        {
+          "id": "a1",
+          "label": "Trust the formula anyway",
+          "reveal": "The Newton update divides the slope by the curvature, and a tiny denominator amplifies the result far beyond the neighbourhood where the quadratic model was built. Trusting it blindly is how a flat patch turns into a giant leap.",
+          "highlight": "long"
+        },
+        {
+          "id": "a2",
+          "label": "Reverse the sign",
+          "reveal": "Reversing the sign points the huge step the other way, often uphill, and the magnitude is unchanged because it still comes from dividing by a tiny curvature. The problem is the size of the division, not its sign."
+        },
+        {
+          "id": "a3",
+          "label": "Shrink the step or fall back to a gradient step",
+          "reveal": "The blowup comes from dividing the slope by a tiny curvature, so cap the step or avoid the division. A guarded step tested by a line search, or a gradient fallback, keeps you in the region where the local model still describes the objective.",
+          "recommended": true,
+          "highlight": "short"
+        }
+      ],
+      "visual": {
+        "kind": "newton",
+        "label": "Concept sketch",
+        "description": "A hand-authored, qualitative curve that flattens out around the current point, with the tangent line drawn at that point. Because the curve is nearly flat there, the tangent is almost horizontal and crosses the axis far away at the spot labelled \"Newton point\". A dashed arrow labelled \"Unguarded jump\" runs from the current point out to that distant crossing, while a solid arrow labelled \"Guarded step\" stops much closer, inside the region where the curve still bends. Diagram labels stay readable as text on mobile; dashed versus solid lines carry the distinction as well as colour.",
+        "screenReaderSummary": "Concept sketch: on a nearly flat stretch of curve the tangent line crosses the axis far away, so the unguarded Newton jump overshoots while a guarded step stays close."
+      }
+    },
+    {
+      "id": "newton-B",
+      "heading": "Scenario B · Negative curvature",
+      "setup": "You are running Newton's method and the second derivative at the current point is negative. The local quadratic model opens downward, so its stationary point is a maximum, and the proposed step moves uphill.",
+      "prompt": "Which fact explains the uphill step?",
+      "choices": [
+        {
+          "id": "b1",
+          "label": "The curvature is negative.",
+          "reveal": "Newton assumes the local quadratic model is convex, so its stationary point is a minimum worth jumping to. With negative curvature that point is a maximum instead, which is why the step climbs; nonconvex regions need a modified Hessian or a fallback direction.",
+          "recommended": true
+        },
+        {
+          "id": "b2",
+          "label": "The derivative is zero.",
+          "reveal": "A zero derivative would make the Newton step zero, leaving you stationary rather than moving uphill. The climb is caused by the downward-opening model, so the sign of the curvature is the fact that matters."
+        }
+      ],
+      "takeaway": "Newton can be trusted when the curvature is positive and well sized; tiny curvature inflates the step, and negative curvature turns the local model into a hilltop."
+    }
+  ]
+}

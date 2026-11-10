@@ -1,0 +1,62 @@
+{
+  "id": "numopt-scenarios-t3-v1",
+  "notebookId": "nb-numopt-demo",
+  "topicId": "t3",
+  "title": "Both steps went downhill. Only one passed the line.",
+  "source": "curated",
+  "usage": "Reviewed exam-eve walkthrough content. Plain-text explanations only; the concept sketch is hand-authored SVG, described below. Scenario choices are page state and never modify coverage, pins, priority, or exported notebook data.",
+  "scenarios": [
+    {
+      "id": "armijo-A",
+      "heading": "Scenario A · Reading the rule",
+      "setup": "You are line searching along a downhill direction. Two candidate steps both lower the objective, one small and one large. Armijo compares the actual decrease against the slope-predicted decrease, the straight sufficient-decrease line through the current value with slope c1 times the directional derivative.",
+      "prompt": "Which candidate passes Armijo?",
+      "choices": [
+        {
+          "id": "a1",
+          "label": "Any decrease passes",
+          "reveal": "A drop by itself is not the test. Armijo asks for a decrease proportional to the step length and the local slope, so a long step that barely lowers the value can fail while going downhill."
+        },
+        {
+          "id": "a2",
+          "label": "The largest step passes",
+          "reveal": "The large step did lower the value, but not by enough for its length, so it sits above the sufficient-decrease line. The line, not the curve, is the test, and a longer step owes a larger predicted decrease.",
+          "highlight": "long"
+        },
+        {
+          "id": "a3",
+          "label": "Only the point below the sufficient-decrease line passes",
+          "reveal": "Armijo accepts exactly the steps whose actual decrease reaches the slope-predicted decrease. The smaller step lands below the line, so its drop beats the prediction and it passes.",
+          "recommended": true,
+          "highlight": "short"
+        }
+      ],
+      "visual": {
+        "kind": "armijo",
+        "label": "Concept sketch",
+        "description": "A hand-authored, qualitative plot of objective value against step size along the search direction. The curve leaves the current value, dips, and climbs again, while the straight sufficient-decrease line leaves the same point with slope c1 times the directional derivative. A dashed candidate labelled \"Large step, fails\" sits on the curve above the line, and a solid candidate labelled \"Small step, passes\" sits on the curve below it. Diagram labels stay readable as text on mobile; dashed versus solid lines carry the distinction as well as colour.",
+        "screenReaderSummary": "Concept sketch: plotted against step size, the large candidate sits above the sufficient-decrease line and fails, while the small candidate sits below the line and passes."
+      }
+    },
+    {
+      "id": "armijo-B",
+      "heading": "Scenario B · Why not tiny steps?",
+      "setup": "Your solver keeps shrinking the candidate step. Every tiny step passes Armijo, yet the objective barely moves and you are stuck far from the minimum.",
+      "prompt": "Why is Armijo alone not enough?",
+      "choices": [
+        {
+          "id": "b1",
+          "label": "It accepts steps that are too small, so you stall.",
+          "reveal": "A tiny step almost always clears the sufficient-decrease line, so Armijo accepts it while progress crawls. The curvature condition, the second Wolfe condition, is what rules out steps that are too small.",
+          "recommended": true
+        },
+        {
+          "id": "b2",
+          "label": "It always rejects steps.",
+          "reveal": "The setup says every tiny step passes, so rejection is not what is happening. The trouble is the opposite: Armijo accepts too easily at the small end and never asks whether the step made meaningful progress."
+        }
+      ],
+      "takeaway": "Armijo alone can bless uselessly tiny steps, and the curvature condition completes the test by demanding that the directional slope has actually flattened."
+    }
+  ]
+}

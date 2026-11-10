@@ -19,8 +19,9 @@ function isGradientDescent(topic) {
   return typeof topic.name === 'string' && /gradient\s+descent/i.test(topic.name);
 }
 
-function choiceHighlight(choiceText) {
-  const t = String(choiceText || '').toLowerCase();
+function choiceHighlight(choice) {
+  if (choice && (choice.highlight === 'long' || choice.highlight === 'short')) return choice.highlight;
+  const t = String((choice && (choice.label || choice.text)) || '').toLowerCase();
   if (/larger|longer|bigger/.test(t)) return 'long';
   if (/reduce|smaller|shorter|small/.test(t)) return 'short';
   return null;
@@ -40,7 +41,7 @@ export async function render(container, ctx, topicId) {
   /* ---- curated scenarios (page state only, plan3 §10) ---- */
   await actions.loadScenarios();
   const scenarios = actions.scenariosForTopic(topic);
-  const isHero = !!scenarios && isGradientDescent(topic);
+  const isHero = !!scenarios && scenarios.length > 0;
 
   const lesson = topic.lesson;
   const cov = (topic.coverage && topic.coverage.status) || 'not_found';
@@ -151,7 +152,7 @@ export async function render(container, ctx, topicId) {
       const wantsSketch = !!sc.visual;
       const visual = sc.visual && typeof sc.visual === 'object' ? sc.visual : {};
       const sketchBox = h('div', { class: 'scenario-sketch' });
-      if (wantsSketch) renderConceptSketch(sketchBox, { highlight: null, caption: visual.label, alt: visual.screenReaderSummary });
+      if (wantsSketch) renderConceptSketch(sketchBox, { highlight: null, kind: visual.kind, caption: visual.label, alt: visual.screenReaderSummary });
 
       const rightCol = h('div', { class: 'scenario-right' });
       const choicesWrap = h('div', { class: 'choice-list', role: 'group', 'aria-label': 'Your options' });
@@ -185,7 +186,8 @@ export async function render(container, ctx, topicId) {
         if (wantsSketch) {
           const chosen = (sc.choices || []).find((c) => c.id === chosenId);
           renderConceptSketch(sketchBox, {
-            highlight: chosen ? choiceHighlight(choiceText(chosen)) : null,
+            highlight: chosen ? choiceHighlight(chosen) : null,
+            kind: visual.kind,
             caption: visual.label,
             alt: visual.screenReaderSummary,
           });

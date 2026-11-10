@@ -510,6 +510,121 @@ if (scenariosRaw === null) {
   add("scenarios file (plan3 §3) valid", scenErrors.length === 0, scenErrors.join("; "));
 }
 
+// ---- 8b. Per-topic scenario files (Addendum v6) -------------------------------------
+// One row per demo/numopt.scenarios.tN.json (N = 2..6). Topic names come from the
+// notebook's topics array (exact §9 labels); scenario-B takeaways must be unique
+// across ALL six files (t1 + t2..t6), so every file is loaded up front and each
+// row evaluates the full set. A missing/unparseable file fails only its own row.
+const TOPIC_VISUAL_KINDS = { t2: "newton", t3: "armijo", t4: "bfgs", t5: "gram-schmidt", t6: "cg" };
+const topicScenarioDocs = [{ topicId: "t1", rel: SCENARIOS_REL, doc: scenariosDoc, loadError: "" }];
+for (let n = 2; n <= 6; n++) {
+  const rel = `demo/numopt.scenarios.t${n}.json`;
+  const raw = readText(rel);
+  let doc = null;
+  let loadError = "";
+  if (raw === null) {
+    loadError = rel + " missing";
+  } else {
+    try {
+      doc = JSON.parse(raw);
+      if (doc === null || typeof doc !== "object" || Array.isArray(doc)) {
+        loadError = "parsed JSON is not an object";
+        doc = null;
+      }
+    } catch (err) {
+      loadError = "invalid JSON: " + err.message;
+    }
+  }
+  topicScenarioDocs.push({ topicId: `t${n}`, rel, doc, loadError });
+}
+for (let n = 2; n <= 6; n++) {
+  const topicId = `t${n}`;
+  const topicName = nbTopics?.find((t) => t?.id === topicId)?.name ?? topicId;
+  const rowLabel = `scenarios ${topicId} (${topicName}) valid (Addendum v6)`;
+  const entry = topicScenarioDocs.find((e) => e.topicId === topicId);
+  if (entry.loadError || !entry.doc) {
+    add(rowLabel, false, entry.loadError || entry.rel + " unreadable");
+    continue;
+  }
+  const doc = entry.doc;
+  const tErrors = [];
+  if (!new RegExp(`^numopt-scenarios-t${n}-v1$`).test(doc.id ?? "")) {
+    tErrors.push(`id: must match /^numopt-scenarios-t${n}-v1$/ (got ${JSON.stringify(doc.id)})`);
+  }
+  if (doc.notebookId !== "nb-numopt-demo") tErrors.push(`notebookId: must be "nb-numopt-demo" (got ${JSON.stringify(doc.notebookId)})`);
+  if (doc.topicId !== topicId) tErrors.push(`topicId: must be "${topicId}" (got ${JSON.stringify(doc.topicId)})`);
+  if (doc.source !== "curated") tErrors.push(`source: must be "curated" (got ${JSON.stringify(doc.source)})`);
+  if (typeof doc.usage !== "string" || !doc.usage.trim()) tErrors.push("usage: must be a non-empty string");
+  const list = Array.isArray(doc.scenarios) ? doc.scenarios : null;
+  if (!list || list.length !== 2) {
+    tErrors.push(`expected exactly 2 scenarios, got ${list ? list.length : "no scenarios array"}`);
+  } else {
+    const wantIds = [["a1", "a2", "a3"], ["b1", "b2"]];
+    const wantPrefix = ["Scenario A ·", "Scenario B ·"];
+    list.forEach((s, i) => {
+      const where = `scenarios[${i}] (${s?.id ?? "?"})`;
+      for (const key of ["id", "heading", "setup", "prompt"]) {
+        if (typeof s?.[key] !== "string" || !s[key].trim()) tErrors.push(`${where}.${key}: must be a non-empty string`);
+      }
+      if (typeof s?.heading !== "string" || !s.heading.startsWith(wantPrefix[i])) {
+        tErrors.push(`${where}.heading: must start with "${wantPrefix[i]}" (got ${JSON.stringify(s?.heading)})`);
+      }
+      const choices = Array.isArray(s?.choices) ? s.choices : null;
+      if (!choices || choices.length !== wantIds[i].length) {
+        tErrors.push(`${where}.choices: expected ${wantIds[i].length} choices`);
+      } else {
+        choices.forEach((ch, j) => {
+          if (ch?.id !== wantIds[i][j]) tErrors.push(`${where}.choices[${j}].id: stable option id "${wantIds[i][j]}" expected (got ${JSON.stringify(ch?.id)})`);
+          for (const key of ["label", "reveal"]) {
+            if (typeof ch?.[key] !== "string" || !ch[key].trim()) tErrors.push(`${where}.choices[${j}].${key}: every choice must have a plain-text label and reveal`);
+          }
+          if (ch?.highlight !== undefined && ch.highlight !== "long" && ch.highlight !== "short") {
+            tErrors.push(`${where}.choices[${j}].highlight: optional, but when present must be "long" or "short" (got ${JSON.stringify(ch?.highlight)})`);
+          }
+        });
+        const recCount = choices.filter((c) => c?.recommended === true).length;
+        if (recCount !== 1) tErrors.push(`${where}: exactly one choice must have recommended === true (got ${recCount})`);
+      }
+    });
+    const vis = list[0]?.visual;
+    const wantKind = TOPIC_VISUAL_KINDS[topicId];
+    if (vis?.kind !== wantKind) tErrors.push(`scenario A visual.kind must be "${wantKind}" (got ${JSON.stringify(vis?.kind)})`);
+    if (vis?.label !== "Concept sketch") tErrors.push(`scenario A visual.label must be "Concept sketch" (got ${JSON.stringify(vis?.label)})`);
+    for (const key of ["description", "screenReaderSummary"]) {
+      if (typeof vis?.[key] !== "string" || !vis[key].trim()) tErrors.push(`scenario A visual.${key}: must be a non-empty string`);
+    }
+    if (typeof list[1]?.takeaway !== "string" || !list[1].takeaway.trim()) tErrors.push("scenario B takeaway: must be a non-empty string");
+  }
+  // Cross-file uniqueness: all six scenario-B takeaways (t1 + t2..t6) must differ.
+  const seenTakeaways = new Map();
+  for (const e of topicScenarioDocs) {
+    const tk = e.doc?.scenarios?.[1]?.takeaway;
+    if (typeof tk !== "string" || !tk.trim()) continue;
+    if (seenTakeaways.has(tk)) {
+      tErrors.push(`scenario B takeaway duplicated between ${seenTakeaways.get(tk)} and ${e.topicId}: ${JSON.stringify(tk)}`);
+    } else {
+      seenTakeaways.set(tk, e.topicId);
+    }
+  }
+  // Plain-text rule: no string value anywhere may carry markdown/code artifacts.
+  const BS = String.fromCharCode(92);
+  const bannedTokens = [["`", "backtick"], ["##", "##"], ["$", "$"], [BS, "backslash"]];
+  const plainHits = [];
+  (function scanPlain(node, where) {
+    if (typeof node === "string") {
+      for (const [tok, label] of bannedTokens) {
+        if (node.includes(tok)) plainHits.push(`${where}: contains ${label}`);
+      }
+    } else if (Array.isArray(node)) {
+      node.forEach((v, i) => scanPlain(v, `${where}[${i}]`));
+    } else if (node && typeof node === "object") {
+      for (const [k, v] of Object.entries(node)) scanPlain(v, `${where}.${k}`);
+    }
+  })(doc, "file");
+  if (plainHits.length) tErrors.push("plain-text violation: " + plainHits.join("; "));
+  add(rowLabel, tErrors.length === 0, tErrors.join("; "));
+}
+
 // ---- 9/10. Pins + legacy import via src/store.js (agent E in flight) ---------------
 let storeMod = null;
 let storeImportError = null;

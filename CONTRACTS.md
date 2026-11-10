@@ -225,3 +225,25 @@ Settings modal: a provider `<select>` then only the active provider's section (B
 model select, or Gemini key + editable model id with a datalist of current Flash-tier names) plus
 the provider's get-a-key link. Provider/model changes call `ctx.rerender()` so the setup chip
 updates live behind the modal. Demo provider needs no key.
+
+---
+
+# Addendum v6 — per-topic curated scenarios (supersedes v3/v4/v5 wording only where it touches scenario loading)
+
+The "What would you do?" section is no longer t1-only. Each demo topic ships its own
+curated scenario file `demo/numopt.scenarios.tN.json` (N = 2..6; t1 stays in
+`demo/numopt.scenarios.json`, byte-identical), one file = one topic, exactly 2 scenarios:
+A = 3 choices (ids a1..a3) + a `visual` { kind, label:"Concept sketch", description,
+screenReaderSummary }, B = 2 choices (ids b1..b2) + a one-sentence `takeaway`; exactly one
+`recommended:true` per scenario. All copy is plain text (no markdown/LaTeX/HTML) and
+`source:"curated"` — reviewed content, never model output. Choices remain page state only:
+never persisted, never affecting coverage, priority, pins, or export.
+
+Loading: `main.js loadScenarios()` fetches all six files in parallel, cache shape
+`{ byTopic: { tN: [...] } }`; `scenariosForTopic(topic)` = byTopic lookup, then the
+gradient-descent name fallback to t1's scenarios (user-notebook hero behavior unchanged).
+`lesson.js` renders the hero section for ANY topic with scenarios. `render.js
+renderConceptSketch` gains a kind registry: 'bowl' (existing, default) plus 'newton',
+'armijo', 'bfgs', 'gram-schmidt', 'cg' — hand-authored SVGs, viewBox 320×170,
+dashed-vs-solid carries meaning, unknown kind → warn once, render nothing.
+`check.mjs` keeps the t1 row untouched and adds one row per new file (43 total).

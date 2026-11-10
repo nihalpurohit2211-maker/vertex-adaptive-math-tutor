@@ -584,30 +584,46 @@ async function pinMove(topicId, delta) {
 let scenariosCache = undefined; // undefined = not tried yet, null = unavailable
 async function loadScenarios() {
   if (scenariosCache !== undefined) return scenariosCache;
-  try {
-    const res = await fetch('demo/numopt.scenarios.json', { cache: 'no-store' });
-    if (!res.ok) throw new Error('HTTP ' + res.status);
-    const data = await res.json();
-    if (Array.isArray(data && data.scenarios)) {
-      scenariosCache = { topicId: typeof data.topicId === 'string' ? data.topicId : null, scenarios: data.scenarios };
-    } else if (Array.isArray(data)) {
-      scenariosCache = { topicId: null, scenarios: data };
-    } else {
-      console.warn('main.js: demo/numopt.scenarios.json has no scenarios array.');
-      scenariosCache = null;
+  const files = [
+    { topicId: 't1', path: 'demo/numopt.scenarios.json' },
+    { topicId: 't2', path: 'demo/numopt.scenarios.t2.json' },
+    { topicId: 't3', path: 'demo/numopt.scenarios.t3.json' },
+    { topicId: 't4', path: 'demo/numopt.scenarios.t4.json' },
+    { topicId: 't5', path: 'demo/numopt.scenarios.t5.json' },
+    { topicId: 't6', path: 'demo/numopt.scenarios.t6.json' },
+  ];
+  const loaded = await Promise.all(files.map(async ({ topicId, path }) => {
+    try {
+      const res = await fetch(path, { cache: 'no-store' });
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      const data = await res.json();
+      if (Array.isArray(data && data.scenarios)) return { topicId, scenarios: data.scenarios };
+      if (Array.isArray(data)) return { topicId, scenarios: data };
+      console.warn(topicId === 't1'
+        ? 'main.js: demo/numopt.scenarios.json has no scenarios array.'
+        : 'main.js: ' + path + ' has no scenarios array.');
+    } catch (err) {
+      console.warn(topicId === 't1'
+        ? 'main.js: curated scenarios unavailable —'
+        : 'main.js: ' + path + ' unavailable —', err.message);
     }
-  } catch (err) {
-    console.warn('main.js: curated scenarios unavailable —', err.message);
+    return null;
+  }));
+  if (!loaded[0]) {
     scenariosCache = null;
+    return scenariosCache;
   }
+  const byTopic = {};
+  for (const entry of loaded) if (entry) byTopic[entry.topicId] = entry.scenarios;
+  scenariosCache = { byTopic };
   return scenariosCache;
 }
 
 function scenariosForTopic(topic) {
   if (!scenariosCache) return null;
-  if (scenariosCache.topicId && scenariosCache.topicId === topic.id) return scenariosCache.scenarios;
+  if (scenariosCache.byTopic[topic.id]) return scenariosCache.byTopic[topic.id];
   // Hero lesson (plan3 §3): the curated scenarios belong to gradient descent.
-  if (typeof topic.name === 'string' && /gradient\s+descent/i.test(topic.name)) return scenariosCache.scenarios;
+  if (typeof topic.name === 'string' && /gradient\s+descent/i.test(topic.name)) return scenariosCache.byTopic.t1;
   return null;
 }
 

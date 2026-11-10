@@ -1,0 +1,62 @@
+{
+  "id": "numopt-scenarios-t6-v1",
+  "notebookId": "nb-numopt-demo",
+  "topicId": "t6",
+  "title": "Every step was downhill. Why did the path zigzag?",
+  "source": "curated",
+  "usage": "Reviewed exam-eve scenario content. Plain-text explanations only; the concept sketch is hand-authored static SVG rendered from the description below. Scenario choices are page state and never modify coverage, pins, priority, or exported notebook data.",
+  "scenarios": [
+    {
+      "id": "cg-A",
+      "heading": "Scenario A · The zigzag",
+      "setup": "You are running steepest descent with exact line searches in a long, narrow valley. Each new direction is perpendicular to the last, so you keep re-stepping in nearly the same directions and bounce across the valley walls. Progress toward the far end is painfully slow.",
+      "prompt": "Why does CG not zigzag?",
+      "choices": [
+        {
+          "id": "a1",
+          "label": "Use a bigger learning rate",
+          "reveal": "A longer step along the same steep directions just throws you farther across the valley. The directions are the problem, not their length.",
+          "highlight": "long"
+        },
+        {
+          "id": "a2",
+          "label": "Randomize the directions",
+          "reveal": "Random directions carry no memory of earlier progress and no guarantee of pointing downhill. CG chooses each direction deliberately from the previous ones."
+        },
+        {
+          "id": "a3",
+          "label": "Use A-orthogonal (conjugate) directions",
+          "reveal": "For two different directions p and q, p-transpose A q equals zero, so the directions are decoupled in the geometry of the quadratic. Progress made along one direction is never undone by the next step, so the zigzag disappears.",
+          "recommended": true,
+          "highlight": "short"
+        }
+      ],
+      "visual": {
+        "kind": "cg",
+        "label": "Concept sketch",
+        "description": "A hand-authored, qualitative narrow elliptical valley with the minimum marked at its centre. A dashed polyline labelled \"Steepest descent\" zigzags across the valley, bouncing between the walls and creeping toward the centre. A solid path labelled \"Conjugate gradient\" reaches the centre in two conjugate moves, each along a different axis of the ellipse. Diagram labels stay readable as text on mobile; dashed versus solid lines carry the distinction as well as colour.",
+        "screenReaderSummary": "Concept sketch: in a narrow elliptical valley, a dashed steepest-descent zigzag bounces across the walls while a solid conjugate-gradient path reaches the centre in two moves."
+      }
+    },
+    {
+      "id": "cg-B",
+      "heading": "Scenario B · Why A-orthogonality?",
+      "setup": "In exact arithmetic, CG solves an n-dimensional quadratic in at most n steps. Each direction is finished for good once you minimize along it.",
+      "prompt": "Which inner product defines conjugacy here?",
+      "choices": [
+        {
+          "id": "b1",
+          "label": "The standard dot product.",
+          "reveal": "Ordinary orthogonality between successive steps is what steepest descent already gives you, and it is what produces the zigzag. It ignores the curvature that A encodes."
+        },
+        {
+          "id": "b2",
+          "label": "The matrix-weighted inner product ⟨p, Aq⟩.",
+          "reveal": "Conjugacy means ⟨p, Aq⟩ equals zero for different directions, which is orthogonality in the geometry of the symmetric positive-definite matrix A. Under that inner product, minimizing along one direction leaves progress along the others intact.",
+          "recommended": true
+        }
+      ],
+      "takeaway": "Conjugate directions decouple the problem — each step finishes one direction for good."
+    }
+  ]
+}

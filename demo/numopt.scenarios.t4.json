@@ -1,0 +1,62 @@
+{
+  "id": "numopt-scenarios-t4-v1",
+  "notebookId": "nb-numopt-demo",
+  "topicId": "t4",
+  "title": "The Hessian was never computed. Where did the curvature come from?",
+  "source": "curated",
+  "usage": "Reviewed exam-eve scenario content. Plain-text explanations only; the concept sketch is hand-authored static SVG rendered from the description below. Scenario choices are page state and never modify coverage, pins, priority, or exported notebook data.",
+  "scenarios": [
+    {
+      "id": "bfgs-A",
+      "heading": "Scenario A · Why approximate?",
+      "setup": "You are minimizing a smooth objective, and Newton's method wants the full Hessian at every iteration. Forming and factoring it is expensive, and away from the minimum it can even be indefinite. BFGS offers a cheaper route to curvature.",
+      "prompt": "What does BFGS actually maintain?",
+      "choices": [
+        {
+          "id": "a1",
+          "label": "Compute the exact Hessian",
+          "reveal": "That is the expensive object BFGS exists to avoid, and an indefinite Hessian can even propose an uphill direction. You would pay the forming and factoring cost every iteration.",
+          "highlight": "long"
+        },
+        {
+          "id": "a2",
+          "label": "Tune only the learning rate",
+          "reveal": "A step size is a single number with no curvature in it, so it cannot bend the path around a narrow valley. BFGS keeps a matrix, not just a scalar."
+        },
+        {
+          "id": "a3",
+          "label": "Build an approximation of the Hessian from step and gradient changes",
+          "reveal": "You never pay to form or factor the true Hessian, and each update keeps the approximation positive definite whenever the curvature condition holds. A positive-definite approximation guarantees a downhill search direction.",
+          "recommended": true,
+          "highlight": "short"
+        }
+      ],
+      "visual": {
+        "kind": "bfgs",
+        "label": "Concept sketch",
+        "description": "A hand-authored, qualitative set of elliptical contours with the minimum marked at the centre. A dashed path labelled \"Exact Newton\" heads almost straight for the minimum, as if the full Hessian were known from the start. A solid path labelled \"BFGS\" begins less directly and bends step by step as each update adds curvature information from the latest step and gradient change, eventually reaching the same minimum. Diagram labels stay readable as text on mobile; dashed versus solid lines carry the distinction as well as colour.",
+        "screenReaderSummary": "Concept sketch: on elliptical contours, a dashed exact-Newton path and a solid BFGS path both reach the minimum, with the BFGS path bending as it gathers curvature from each step."
+      }
+    },
+    {
+      "id": "bfgs-B",
+      "heading": "Scenario B · The secant condition",
+      "setup": "You just took a step and evaluated the gradient at the new point. The next approximation must satisfy the secant condition: B-next times s equals y, where s is the change in position and y is the change in gradient between the last two points.",
+      "prompt": "Which information does the BFGS update reuse?",
+      "choices": [
+        {
+          "id": "b1",
+          "label": "Only the current gradient.",
+          "reveal": "One gradient tells you the slope at a single point, not how the slope changed as you moved. The secant condition compares two points, so a lone gradient cannot satisfy it."
+        },
+        {
+          "id": "b2",
+          "label": "The change in position and the change in gradient.",
+          "reveal": "Those changes are exactly s and y, and together they record how the gradient responded to your last move. Feeding them into the update satisfies the secant condition with no extra Hessian work.",
+          "recommended": true
+        }
+      ],
+      "takeaway": "BFGS builds the curvature it needs from the steps you have already taken."
+    }
+  ]
+}
