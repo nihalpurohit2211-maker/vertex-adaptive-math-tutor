@@ -13,8 +13,10 @@
  *   excerpt block with their ids ([c1], [c2], …) so the model can cite
  *   `chunkIds` exactly.
  * - `{lang}` parameterizes wording: "en" | "hinglish" (contracts DEFAULTS.lang).
- * - Prompt intent is kept verbatim from plan §7, including the
- *   "Output ONLY a JSON object…" line and the numeric-trace rules.
+ * - Prompt intent is kept verbatim from plan §7 — except plan3 §6.3
+ *   removed the numeric-trace rules from the lesson prompt (v3: the
+ *   product flow has no generated code or traces; legacy lesson `trace`
+ *   is discarded at the store import boundary).
  */
 
 import { DEFAULTS } from './contracts.js';
@@ -113,17 +115,14 @@ export function lessonPrompt({ topic, chunks, lang = DEFAULTS.lang }) {
     '(2) `notesGaps` = what a student would need that the excerpts do not explain.',
     '(3) Algorithm ≤5 steps, each ≤20 words.',
     '(4) `analogy`: one everyday sentence.',
-    '(5) If `kind` is numeric, write `trace.code`: JS `function run(){…}` returning ' +
-    '`{columns, rows, answer}`; tiny example, ≤8 rows, small friendly numbers, only `Math`, ' +
-    'no imports/randomness/I/O, ≤40 lines. Do not state computed numbers in any prose.',
-    '(6) `diagramMermaid`: a `flowchart TD` of the algorithm, ≤8 nodes, ASCII labels, or `null`.',
-    '(7) `examQuestion`: a typical question and a model answer ≤6 lines.',
-    '(8) ' + langLine(lang),
+    '(5) `diagramMermaid`: a `flowchart TD` of the algorithm, ≤8 nodes, ASCII labels, or `null`.',
+    '(6) `examQuestion`: a typical question and a model answer ≤6 lines.',
+    '(7) ' + langLine(lang),
     '',
     'Return the Lesson schema: {oneLiner, why, analogy, ' +
     'steps:[{text,source,chunkIds}], pitfalls:[{text,source,chunkIds}], notesGaps:[string], ' +
-    'trace:{title,code}|null, diagramMermaid|null, examQuestion:{q,modelAnswer,source}}.',
-    'For a conceptual topic set `trace` to null.',
+    'diagramMermaid|null, examQuestion:{q,modelAnswer,source}}.',
+    'Return exactly the keys listed above and nothing else — no extra fields, no worked-example code.',
     '',
     'NOTES EXCERPTS (cite the bracketed ids as chunkIds):',
     excerptBlock,
@@ -133,7 +132,8 @@ export function lessonPrompt({ topic, chunks, lang = DEFAULTS.lang }) {
 }
 
 /**
- * narration prompt (plan §7.3) — numbers first, words second.
+ * narrationPrompt (plan §7.3) — numbers first, words second.
+ * Legacy live path may still call this; the product flow (plan3 §2/§6.3) no longer requests narration for curated content — traces were removed and the demo ships reviewed static cards.
  * @param {{ topic: {name: string}|string, steps?: Array<string|{text: string}>,
  *           computedTable?: {columns: string[], rows: Array<Array>, answer: string} | string,
  *           lang?: string }} o

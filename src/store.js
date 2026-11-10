@@ -12,6 +12,14 @@
  * - importNotebook() hand-validates the §6.2 shape and throws descriptive
  *   Errors; Track A's schema.js validators are used opportunistically when
  *   the module is already loaded (dynamic import, graceful fallback).
+ * - v3 boundary rules (plan3 §6.3/§10, CONTRACTS Addendum v3): legacy
+ *   `lesson.trace` and trace-only fields are DISCARDED at the load/import
+ *   boundary so old Plan 2 notebooks keep importing and trace never runs.
+ * - v3 revision pins: Notebook.revisionPins is an ordered array of existing
+ *   topic IDs; missing/legacy → []. normalizePins is pure and side-effect
+ *   free (Node checks import it without any browser storage access);
+ *   togglePin/movePin persist via the SAME saveNotebook serialization path;
+ *   getPins normalizes on read. Pins change ONLY the revision sheet.
  * - `saveNotebook(demoNotebook)` works for any object — Track C may use it
  *   as a dev stub.
  */
@@ -345,6 +353,161 @@ function nbKey(id) {
   return STORAGE.notebookKey(id);
 }
 
+// ---------------------------------------------------------------------------
+// v3 boundary sanitization (plan3 §6.3/§10) — applied whenever notebook JSON
+// crosses from storage/import into app memory: drop legacy trace fields and
+// normalize revisionPins. Pure with respect to other modules; mutates only
+// the freshly parsed object handed to it.
+// ---------------------------------------------------------------------------
+
+/**
+ * Remove `lesson.trace` (and everything trace-only nested inside it: code,
+ * computed, result, narration, takeaway) from every lesson in a notebook.
+ * Trace was removed from the product flow in v3; old Plan 2 notebooks must
+ * still open, and no renderer or runner downstream may ever see trace data.
+ * @param {Notebook} nb freshly parsed notebook (mutated in place)
+ */
+function stripLegacyTrace(nb) {
+  if (!nb || typeof nb !== 'object' || !Array.isArray(nb.topics)) return;
+  for (const t of nb.topics) {
+    if (t && t.lesson && typeof t.lesson === 'object' && !Array.isArray(t.lesson)) {
+      delete t.lesson.trace;
+    }
+  }
+}
+
+/**
+ * Storage/import → memory boundary: strip legacy trace, then guarantee
+ * `revisionPins` is a normalized ordered array of existing topic IDs
+ * (legacy notebooks default to []).
+ * @param {Notebook} nb freshly parsed notebook (mutated in place)
+ * @returns {Notebook} the same object, sanitized
+ */
+function sanitizeNotebookBoundary(nb) {
+  if (!nb || typeof nb !== 'object' || Array.isArray(nb)) return nb;
+  stripLegacyTrace(nb);
+  nb.revisionPins = normalizePins(nb.revisionPins, nb);
+  return nb;
+}
+
+// ---------------------------------------------------------------------------
+// revision pins (CONTRACTS Addendum v3, plan3 §10)
+// ---------------------------------------------------------------------------
+
+/**
+ * PURE — no storage, no mutation of inputs. Normalize a candidate pins array
+ * against a notebook's topics: drop unknown topic IDs and duplicates, keep
+ * the first valid occurrence, preserve order. Anything that is not an array
+ * (undefined legacy notebooks included) becomes [].
+ * @param {unknown} arr candidate pin list (array of topic id strings or garbage)
+ * @param {Notebook|null|undefined} notebook notebook whose topic IDs are valid
+ * @returns {string[]} normalized ordered topic IDs
+ */
+export function normalizePins(arr, notebook) {
+  if (!Array.isArray(arr)) return [];
+  const validIds = new Set();
+  if (notebook && Array.isArray(notebook.topics)) {
+    for (const t of notebook.topics) {
+      if (t && typeof t.id === 'string' && t.id.trim() !== '') validIds.add(t.id);
+    }
+  }
+  const out = [];
+  const seen = new Set();
+  for (const id of arr) {
+    if (typeof id !== 'string') continue;          // garbage entry → drop
+    if (!validIds.has(id)) continue;               // stale/unknown topic → drop
+    if (seen.has(id)) continue;                    // duplicate → keep first
+    seen.add(id);
+    out.push(id);
+  }
+  return out;
+}
+
+/**
+ * Ordered pins of one notebook, normalized on read. A missing notebook (or a
+ * corrupt/unreadable entry) reads as [] — pins are never an error source for
+ * the UI; the sheet just starts empty.
+ * @param {string} notebookId
+ * @returns {string[]}
+ */
+export function getPins(notebookId) {
+  if (typeof notebookId !== 'string' || notebookId.trim() === '') {
+    throw new Error('getPins: notebookId must be a non-empty string');
+  }
+  const nb = loadNotebook(notebookId);
+  if (!nb) return [];
+  return normalizePins(nb.revisionPins, nb);
+}
+
+function requireNotebookForPin(opName, notebookId) {
+  if (typeof notebookId !== 'string' || notebookId.trim() === '') {
+    throw new Error(`${opName}: notebookId must be a non-empty string`);
+  }
+  const nb = loadNotebook(notebookId);
+  if (!nb || typeof nb !== 'object' || !Array.isArray(nb.topics)) {
+    throw new Error(`${opName}: notebook "${notebookId}" not found in storage`);
+  }
+  return nb;
+}
+
+/**
+ * Pin toggle: append the topic once if absent, remove it if present.
+ * Persists through the existing saveNotebook serialization path.
+ * @param {string} notebookId
+ * @param {string} topicId must exist among the notebook's topics
+ * @returns {string[]} the updated normalized pins array (fresh copy)
+ */
+export function togglePin(notebookId, topicId) {
+  const nb = requireNotebookForPin('togglePin', notebookId);
+  if (typeof topicId !== 'string' || topicId.trim() === '') {
+    throw new Error('togglePin: topicId must be a non-empty string');
+  }
+  const known = nb.topics.some((t) => t && t.id === topicId);
+  if (!known) {
+    throw new Error(`togglePin: topic "${topicId}" is not in notebook "${nb.id}" — unknown topics cannot be pinned`);
+  }
+  const pins = normalizePins(nb.revisionPins, nb);
+  const idx = pins.indexOf(topicId);
+  if (idx === -1) pins.push(topicId); // append once
+  else pins.splice(idx, 1);           // unpin
+  nb.revisionPins = pins;
+  saveNotebook(nb);
+  return pins.slice();
+}
+
+/**
+ * Reorder a pin by swapping it with its adjacent neighbor. delta = -1 moves
+ * up (toward the front), +1 moves down. At a list boundary, or when the
+ * topic is not currently pinned, this is a no-op that still returns the
+ * current normalized pins (and persists them, keeping storage canonical).
+ * @param {string} notebookId
+ * @param {string} topicId
+ * @param {number} delta -1 or +1
+ * @returns {string[]} the pins array after the (possible) swap
+ */
+export function movePin(notebookId, topicId, delta) {
+  const nb = requireNotebookForPin('movePin', notebookId);
+  if (delta !== -1 && delta !== 1) {
+    throw new Error(`movePin: delta must be -1 (up) or +1 (down), got ${JSON.stringify(delta)}`);
+  }
+  if (typeof topicId !== 'string' || topicId.trim() === '') {
+    throw new Error('movePin: topicId must be a non-empty string');
+  }
+  const pins = normalizePins(nb.revisionPins, nb);
+  const i = pins.indexOf(topicId);
+  const j = i === -1 ? -1 : i + delta;
+  if (i !== -1 && j >= 0 && j < pins.length) {
+    const tmp = pins[i];
+    pins[i] = pins[j];
+    pins[j] = tmp;
+  }
+  // i === -1 (not pinned) or boundary swap → no reorder; still write the
+  // normalized list back so storage and the returned array agree.
+  nb.revisionPins = pins;
+  saveNotebook(nb);
+  return pins.slice();
+}
+
 /**
  * Persist a notebook (any object — Track C may pass a demo stub).
  * Sets it as the active notebook when it has an id.
@@ -379,7 +542,9 @@ export function loadNotebook(id) {
   const raw = tierGet('local', nbKey(id));
   if (raw === null) return null;
   try {
-    return JSON.parse(raw);
+    // Storage → memory boundary: legacy trace dropped, pins normalized
+    // (sanitizeNotebookBoundary is a no-op on non-objects).
+    return sanitizeNotebookBoundary(JSON.parse(raw));
   } catch (err) {
     return null; // corrupt entry — listNotebooks surfaces it as unreadable
   }
@@ -465,6 +630,13 @@ export function saveAfter(topicId, after) {
 // export / import (plan F25)
 // ---------------------------------------------------------------------------
 
+/**
+ * Serialize a notebook to pretty JSON (plan F25). Addendum v3: revisionPins
+ * ride along as-is (whatever ordered list the notebook carries is exported;
+ * notebooks loaded/imported through this module already hold a normalized
+ * one). Round-trips through importNotebook, which re-normalizes pins and
+ * drops legacy trace at the boundary.
+ */
 export function exportNotebook(nb) {
   if (!nb || typeof nb !== 'object') {
     throw new Error('exportNotebook: expected a Notebook object');
@@ -475,7 +647,14 @@ export function exportNotebook(nb) {
 /**
  * Validate + parse a Notebook JSON string (plan §6.2 shape).
  * Hand-rolled local validation; schema.js validators used opportunistically.
- * @throws {Error} descriptive, lists every problem found
+ * v3 boundary rules (plan3 §6.3/§10, Addendum v3):
+ * - legacy `lesson.trace` and trace-only fields are DISCARDED before
+ *   validation, so an old Plan 2 notebook with traces imports safely and
+ *   trace never reaches a renderer or runner;
+ * - `revisionPins` is normalized against the imported topics (unknown IDs
+ *   and duplicates dropped, first valid occurrence kept, non-arrays → []);
+ *   pin problems NEVER make an import throw.
+ * @throws {Error} descriptive, lists every notebook-shape problem found
  */
 export function importNotebook(json) {
   let obj;
@@ -490,15 +669,25 @@ export function importNotebook(json) {
   } else {
     throw new Error('importNotebook: expected a JSON string or a Notebook object');
   }
+  if (obj && typeof obj === 'object' && !Array.isArray(obj)) {
+    stripLegacyTrace(obj); // trace is deprecated — drop it, then never re-validate it
+  }
   const errors = collectNotebookErrors(obj);
   if (schemaModule && typeof schemaModule.validateLesson === 'function' && Array.isArray(obj.topics)) {
     // Opportunistic deeper check when Track A's schema.js happens to be loaded.
+    // Trace-attributed complaints are ignored on purpose: trace was removed
+    // from the product flow, validators accept lessons with or without it
+    // (Addendum v3), and an outdated validator must not block an import
+    // whose trace we were going to discard anyway.
     for (const t of obj.topics) {
       if (t && t.lesson) {
         try {
           const v = schemaModule.validateLesson(t.lesson, t.kind);
           if (v !== true && Array.isArray(v) && v.length) {
-            errors.push(`topic "${t.name}" lesson: ${v.join('; ')}`);
+            const relevant = v.map((x) => String(x)).filter((msg) => !/\btrace\b/i.test(msg));
+            if (relevant.length) {
+              errors.push(`topic "${t.name}" lesson: ${relevant.join('; ')}`);
+            }
           }
         } catch (err) {
           errors.push(`topic "${t.name}" lesson: schema.validateLesson threw ${err.message}`);
@@ -510,6 +699,7 @@ export function importNotebook(json) {
     throw new Error(`importNotebook: invalid Notebook (${errors.length} problem(s)):\n  - ` +
       errors.join('\n  - '));
   }
+  obj.revisionPins = normalizePins(obj.revisionPins, obj);
   return obj;
 }
 
@@ -637,25 +827,10 @@ function collectLessonErrors(l, label, e) {
   }
   if (!isArr(l.notesGaps) || l.notesGaps.some((g) => !isStr(g))) e.push(`${p}.notesGaps must be an array of strings`);
 
-  if (l.trace !== null && l.trace !== undefined) {
-    if (typeof l.trace !== 'object' || isArr(l.trace)) {
-      e.push(`${p}.trace must be null or an object`);
-    } else {
-      if (!isStr(l.trace.title)) e.push(`${p}.trace.title must be a string`);
-      if (!isStr(l.trace.code)) e.push(`${p}.trace.code must be a string`);
-      if (typeof l.trace.computed !== 'boolean') e.push(`${p}.trace.computed must be a boolean`);
-      if (l.trace.result !== null && l.trace.result !== undefined) {
-        const r = l.trace.result;
-        if (typeof r !== 'object' || !isArr(r.columns) || !isArr(r.rows) || !isStr(r.answer)) {
-          e.push(`${p}.trace.result must be {columns:[], rows:[[]], answer:""}`);
-        }
-      }
-      if (!isArr(l.trace.narration) || l.trace.narration.some((n) => !isStr(n))) {
-        e.push(`${p}.trace.narration must be an array of strings`);
-      }
-      if (!isStr(l.trace.takeaway)) e.push(`${p}.trace.takeaway must be a string`);
-    }
-  }
+  // v3 (plan3 §6.3): `trace` is deprecated and already DISCARDED by
+  // importNotebook's boundary pass before validation runs, so there is no
+  // trace-specific check left here — an absent or formerly-present trace
+  // never blocks an import.
 
   if (!(l.diagramMermaid === null || l.diagramMermaid === undefined || isStr(l.diagramMermaid))) {
     e.push(`${p}.diagramMermaid must be null or a string`);
@@ -677,7 +852,20 @@ function collectLessonErrors(l, label, e) {
 
 const DEMO_URL = 'demo/numopt.notebook.json';
 
-/** @returns {Promise<Notebook>} fetches and validates the baked demo notebook */
+/**
+ * Load the baked demo notebook (judge path — zero model requests) and make
+ * it active. Demo isolation (plan3 §10, Addendum v3):
+ * - the demo keeps its own notebook id (the baked JSON's `id`), separate
+ *   from every user notebook — nothing else is read or written here;
+ * - FIRST open (no stored demo under that id): revisionPins initialized to
+ *   [] — the demo starts with zero pins even if the baked JSON carries any;
+ * - REOPEN (stored demo exists, e.g. after pins were made): fresh curated
+ *   content is served, but the stored demo pins are RESTORED (normalized
+ *   against the fresh topic ids);
+ * - reset/delete of the demo id only ever affects that id; user notebooks
+ *   keep their own notes, selections and pins.
+ * @returns {Promise<Notebook>} fetches and validates the baked demo notebook
+ */
 export async function loadDemoNotebook() {
   await ensureSchema(); // opportunistic deeper validation; safe if it fails
   if (typeof fetch !== 'function') {
@@ -704,6 +892,10 @@ export async function loadDemoNotebook() {
   } catch (err) {
     throw new Error(`Demo notebook unavailable: the baked demo file is invalid. ${err.message}`);
   }
+  // Pin policy for the demo namespace: fresh curated content every open,
+  // pins only ever initialized (first open) or restored (reopened).
+  const storedDemo = loadNotebook(nb.id);
+  nb.revisionPins = storedDemo ? normalizePins(storedDemo.revisionPins, nb) : [];
   saveNotebook(nb); // becomes the active notebook (also useful as Track C dev stub)
   return nb;
 }
@@ -731,6 +923,10 @@ export const store = {
   loadDemoNotebook,
   saveRating,
   saveAfter,
+  normalizePins,
+  getPins,
+  togglePin,
+  movePin,
 };
 
 export default store;
