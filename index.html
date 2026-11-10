@@ -3,221 +3,42 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="Vertex — adaptive math tutor. Every question, one step up. A deterministic mastery engine with adaptive difficulty, live mastery bars, and personalized revision PDFs.">
+  <meta name="description" content="Vertex — exam-ready notes. Turn messy notes and a syllabus into a prioritized plan, missed-the-lecture lessons with computed worked examples, and a one-page personal sheet. Built on the BharatCode model API.">
   <meta name="color-scheme" content="dark">
-  <title>Vertex — adaptive math tutor</title>
+  <title>Vertex — exam-ready notes</title>
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-  <a class="skip-link" href="#main-content">Skip to content</a>
+  <a class="skip-link" href="#root">Skip to content</a>
 
   <header class="app-header">
     <div class="brand">
       <span class="brand-mark" aria-hidden="true">▲</span>
       <span class="brand-name">Vertex</span>
-      <span class="brand-tag">adaptive math tutor</span>
+      <span class="brand-tag">exam-ready notes</span>
     </div>
     <nav class="main-nav" aria-label="Main navigation">
-      <button type="button" class="nav-btn is-active" data-goto="view-dashboard">Dashboard</button>
-      <button type="button" class="nav-btn" data-goto="view-picker">Topics</button>
-      <button type="button" class="nav-btn" data-goto="view-chat">Ask the tutor</button>
-      <button type="button" class="nav-btn nav-btn-settings" data-open="modal-settings" aria-label="Open settings">Settings</button>
+      <button type="button" class="nav-btn" data-route="#/setup">Setup</button>
+      <button type="button" class="nav-btn" data-route="#/map">Plan</button>
+      <button type="button" class="nav-btn" data-route="#/sheet">Sheet</button>
+      <button type="button" class="nav-btn" id="btn-settings" aria-label="Open settings">⚙ Settings</button>
     </nav>
   </header>
 
-  <main id="main-content">
-
-    <!-- ========== DASHBOARD (default view) ========== -->
-    <section id="view-dashboard" class="view" data-view="view-dashboard" aria-label="Dashboard">
-      <div class="view-inner">
-
-        <div class="dash-head">
-          <h1 id="greeting" class="greeting"></h1>
-          <p id="streak" class="streak" aria-live="polite"></p>
-        </div>
-
-        <div id="demo-banner" class="banner card">
-          <div class="banner-text">
-            <h2 class="banner-title">New here?</h2>
-            <p class="banner-body">Vertex auto-seeds a lived-in demo state. Load it and answer two questions wrong — the drill loop closes your gap in real time.</p>
-          </div>
-          <button type="button" id="btn-demo-seed" class="btn btn-accent">Try the demo</button>
-        </div>
-
-        <section class="dash-section" aria-labelledby="topics-heading">
-          <h2 id="topics-heading" class="section-title">Your topics</h2>
-          <div id="topic-cards" class="topic-cards"></div>
-        </section>
-
-        <section class="dash-section" aria-labelledby="continue-heading">
-          <h2 id="continue-heading" class="section-title">Continue where you left off</h2>
-          <div id="continue-slot" class="continue-slot"></div>
-        </section>
-
-        <section class="dash-section" aria-labelledby="mistakes-heading">
-          <h2 id="mistakes-heading" class="section-title">Recent mistakes</h2>
-          <p class="section-note">Tap a mistake to re-drill exactly that concept.</p>
-          <ul id="recent-mistakes" class="mistake-list" aria-labelledby="mistakes-heading"></ul>
-        </section>
-
-        <section class="dash-section" aria-labelledby="modes-heading">
-          <h2 id="modes-heading" class="section-title">Study modes</h2>
-          <div class="mode-grid">
-            <button type="button" id="btn-mode-revision" class="btn card mode-card">
-              <span class="mode-name">30-minute revision</span>
-              <span class="mode-desc">Up to 6 focused questions, then your revision sheet.</span>
-              <span class="chip chip-live">live</span>
-            </button>
-            <button type="button" class="btn card mode-card btn-soon" data-toast="Crash course is on the roadmap — coming soon.">
-              <span class="mode-name">Crash course</span>
-              <span class="mode-desc">Exam Eve coverage of a whole topic in 1–2 days.</span>
-              <span class="chip chip-soon">coming soon</span>
-            </button>
-            <button type="button" class="btn card mode-card btn-soon" data-toast="In-depth learning is on the roadmap — coming soon.">
-              <span class="mode-name">In-depth learning</span>
-              <span class="mode-desc">Slow, layered mastery across every tier.</span>
-              <span class="chip chip-soon">coming soon</span>
-            </button>
-          </div>
-        </section>
-
-      </div>
-    </section>
-
-    <!-- ========== TOPIC PICKER ========== -->
-    <section id="view-picker" class="view" data-view="view-picker" aria-label="Topic map" hidden>
-      <div class="view-inner">
-        <div class="view-head">
-          <button type="button" class="btn btn-ghost btn-back" data-goto="view-dashboard">← Back to dashboard</button>
-          <h1 class="view-title">Topic map</h1>
-          <p class="view-sub">One topic is deep tonight — Trigonometry. The rest of the map is the roadmap.</p>
-        </div>
-        <div id="topic-grid" class="topic-grid" aria-label="All planned topics"></div>
-        <div class="picker-cta">
-          <button type="button" id="btn-start-quiz" class="btn btn-accent btn-lg">Start quiz — Trigonometry</button>
-        </div>
-      </div>
-    </section>
-
-    <!-- ========== ADAPTIVE QUIZ ========== -->
-    <section id="view-quiz" class="view" data-view="view-quiz" aria-label="Adaptive quiz" hidden>
-      <div class="view-inner quiz-inner">
-        <div class="quiz-topline">
-          <span id="mode-chip" class="chip chip-mode">adaptive</span>
-          <button type="button" class="btn btn-ghost btn-sm" data-goto="view-dashboard">Leave session</button>
-        </div>
-
-        <div class="quiz-layout">
-          <div id="quiz-card" class="card quiz-card" aria-live="polite">
-            <div id="progress-dots" class="progress-dots" aria-label="Session progress"></div>
-            <h2 id="quiz-prompt" class="quiz-prompt"></h2>
-            <ul id="options" class="options" aria-label="Answer options"></ul>
-            <div class="quiz-actions">
-              <button type="button" id="btn-hint" class="btn btn-ghost">Hint</button>
-              <button type="button" id="btn-why" class="btn btn-ghost">Why?</button>
-            </div>
-            <div id="hint-panel" class="hint-panel" hidden></div>
-            <div id="why-panel" class="why-panel" hidden>
-              <h3 class="why-title">Why? — step by step</h3>
-              <ol id="why-steps" class="why-steps"></ol>
-              <button type="button" id="btn-eli5" class="btn btn-ghost btn-sm eli5-toggle" aria-expanded="false">Explain like I'm 5</button>
-              <p id="eli5-panel" class="eli5" hidden></p>
-            </div>
-          </div>
-
-          <aside id="board" class="board card" aria-label="Mastery board — five concepts, zero to ten">
-            <h2 class="board-title">Mastery <span class="board-scale">/10</span></h2>
-            <div id="board-rows" class="board-rows"></div>
-            <p class="board-legend"><span class="legend-swatch swatch-mastered"></span>mastered ≥ 7
-              <span class="legend-swatch swatch-low"></span>needs work</p>
-          </aside>
-        </div>
-      </div>
-    </section>
-
-    <!-- ========== MASTERED ========== -->
-    <section id="view-mastered" class="view" data-view="view-mastered" aria-label="Session complete" hidden>
-      <div class="view-inner centered">
-        <h1 class="celebrate-title" id="mastered-heading">Session complete</h1>
-        <p class="celebrate-sub" id="mastered-sub"></p>
-        <div id="mastered-stats" class="stats-grid"></div>
-        <div class="btn-row">
-          <button type="button" id="btn-open-pdf" class="btn btn-accent btn-lg" data-goto="view-sheet">Open your revision PDF</button>
-          <button type="button" id="btn-retake" class="btn btn-ghost btn-lg">Retake</button>
-        </div>
-        <button type="button" class="btn btn-ghost btn-sm btn-back-gap" data-goto="view-dashboard">Back to dashboard</button>
-      </div>
-    </section>
-
-    <!-- ========== REVISION SHEET ========== -->
-    <section id="view-sheet" class="view" data-view="view-sheet" aria-label="Revision sheet" hidden>
-      <div class="view-inner">
-        <div class="view-head sheet-head">
-          <button type="button" class="btn btn-ghost btn-back" data-goto="view-dashboard">← Back to dashboard</button>
-          <h1 class="view-title">Your revision sheet</h1>
-          <p class="view-sub">Formulas, rules, and the mistakes Vertex saw you make.</p>
-        </div>
-        <div id="sheet-content" class="sheet"></div>
-        <div class="picker-cta">
-          <button type="button" id="btn-export-pdf" class="btn btn-accent btn-lg">Export your PDF</button>
-        </div>
-      </div>
-    </section>
-
-    <!-- ========== ASK THE TUTOR (CHAT) ========== -->
-    <section id="view-chat" class="view" data-view="view-chat" aria-label="Ask the tutor" hidden>
-      <div class="view-inner">
-        <div class="view-head chat-head">
-          <h1 class="view-title">Ask the tutor</h1>
-          <span id="chip-offline" class="chip chip-offline" hidden>offline mode</span>
-        </div>
-        <div id="chat-log" class="chat-log card" role="log" aria-live="polite" aria-label="Tutor conversation"></div>
-        <div class="chat-compose">
-          <input id="chat-input" class="chat-input" type="text" autocomplete="off"
-                 placeholder="Ask about any formula, rule, or mistake…" aria-label="Message the tutor">
-          <button type="button" id="btn-chat-send" class="btn btn-accent">Send</button>
-        </div>
-      </div>
-    </section>
-
-  </main>
+  <main id="root" tabindex="-1" aria-live="polite"></main>
 
   <footer class="app-footer">
-    <div class="footer-inner">
-      <p class="footer-brand">Vertex — adaptive math tutor</p>
-      <p class="footer-tagline">Every question, one step up.</p>
-      <p><a class="footer-link" href="https://github.com/nihalpurohit2211-maker/vertex-adaptive-math-tutor" target="_blank" rel="noopener">Source on GitHub</a></p>
-    </div>
+    <p class="footer-brand">Vertex — exam-ready notes</p>
+    <p class="footer-tagline">Exam-ready without picking up a pen.</p>
+    <p class="footer-note">Built on the BharatCode model API · notes stay in your browser.</p>
   </footer>
 
-  <!-- Toast (shown/hidden by app.js) -->
-  <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
+  <!-- Toast stack (main.js owns it) -->
+  <div id="toast-container" class="toast-container" role="status" aria-live="polite"></div>
 
-  <!-- Printable revision PDF (screen-hidden; only #print-area prints) -->
-  <div id="print-area">
-    <section id="print-mistakes" class="print-section"></section>
-    <section id="print-sheet" class="print-section"></section>
-  </div>
+  <!-- Settings modal mount (views/settings.js owns it) -->
+  <div id="settings-modal-root"></div>
 
-  <!-- Settings modal -->
-  <div id="settings-modal" class="modal-backdrop" data-view="modal-settings" role="dialog" aria-modal="true" aria-labelledby="settings-heading" hidden>
-    <div class="modal-card card">
-      <button type="button" id="btn-close-settings" class="modal-close" aria-label="Close settings">×</button>
-      <h2 id="settings-heading" class="modal-title">Settings</h2>
-
-      <label class="field-label" for="settings-key">BharatCode API key</label>
-      <input id="settings-key" class="text-input" type="password" autocomplete="off" spellcheck="false" placeholder="Paste your key to enable live tutoring">
-      <p class="field-note">Optional — the tutor falls back to offline mode without a key. Your key is saved in localStorage only: it is stored only in your browser, never in this repo and never logged.</p>
-
-      <div class="modal-actions">
-        <button type="button" id="btn-save-key" class="btn btn-accent">Save key</button>
-        <button type="button" id="btn-reset-demo" class="btn btn-danger">Reset demo data</button>
-      </div>
-    </div>
-  </div>
-
-  <script src="data/topics.js"></script>
-  <script src="app.js"></script>
-  <script src="chat.js"></script>
+  <script type="module" src="/src/main.js"></script>
 </body>
 </html>
