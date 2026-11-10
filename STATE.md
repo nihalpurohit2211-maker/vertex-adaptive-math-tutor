@@ -19,6 +19,8 @@
 ## Phase log
 - Phase 0: contracts frozen, `dev` branch created. G0 human steps outstanding (repo, key, T1–T4, T6).
 - Phase 1 mid-point: B+D committed.
+- Plan 3 goal active (22:21). Wave 1 running: Track C (Plan 2 UI, alive — files active 22:24), P3-E (store/prompts), P3-F (schema/check/demo fixture). Tag `v0-trig-mcq` created locally at 32a4471 (push pending human repo).
+- Queued: W2 UI wave (light theme §5, scenarios §3/§10 interaction contract, pin UI, 1-page print, trace surface + trace.js/worker deletion) — launches on Track C report to avoid same-file corruption (see failure log). W3: §12 QA matrix + §7 acceptance + README/submission copy from final state.
 
 ## Verified working
 - D: all stored trace.code re-run in node:vm == stored rows (117 PASS); notes match §8 matrix byte-wise; GS/CG lexical absence proven.
@@ -31,6 +33,7 @@
 | Error | Attempt | Root cause | Decision |
 |---|---|---|---|
 | scripts/check.mjs syntax FAIL (mid-file reorder) | Track A agent editing §11 checks | Agent interrupted by user mid-repair; file left inconsistent | Resumed Track A agent to reconstruct check.mjs only; engine modules + tests untouched (38/38 pass) |
+| Track C "silently hung" 30 min | waited for completion notification | Track C had been KILLED by user stop; killed agents send NO notification (TaskStop reports status: killed) | Lesson: file-mtime silence → probe task status; committed C's working landed output (0314855, four-screen browser probe clean) and relaunched as W2 with plan3 scope |
 
 
 ## Notes
