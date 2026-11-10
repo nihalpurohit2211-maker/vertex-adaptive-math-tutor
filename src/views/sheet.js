@@ -26,6 +26,38 @@ function plainText(s) {
     .trim();
 }
 
+const SUBSCRIPTS = { '0': '₀', '1': '₁', '2': '₂', '3': '₃', '4': '₄', '5': '₅', '6': '₆', '7': '₇', '8': '₈', '9': '₉', '+': '₊', '-': '₋', '−': '₋', '=': '₌', '(': '₍', ')': '₎', a: 'ₐ', e: 'ₑ', h: 'ₕ', i: 'ᵢ', j: 'ⱼ', k: 'ₖ', l: 'ₗ', m: 'ₘ', n: 'ₙ', o: 'ₒ', p: 'ₚ', r: 'ᵣ', s: 'ₛ', t: 'ₜ', u: 'ᵤ', v: 'ᵥ', x: 'ₓ' };
+const SUPERSCRIPTS = { '0': '⁰', '1': '¹', '2': '²', '3': '³', '4': '⁴', '5': '⁵', '6': '⁶', '7': '⁷', '8': '⁸', '9': '⁹', '+': '⁺', '-': '⁻', '−': '⁻', '=': '⁼', '(': '⁽', ')': '⁾', T: 'ᵀ', n: 'ⁿ', i: 'ⁱ' };
+const GREEK = { rho: 'ρ', alpha: 'α', beta: 'β', gamma: 'γ', delta: 'δ', epsilon: 'ε', theta: 'θ', lambda: 'λ', sigma: 'σ', tau: 'τ', phi: 'φ', chi: 'χ', psi: 'ψ', omega: 'ω', nabla: '∇' };
+
+function mapGlyphs(s, table) {
+  let out = '';
+  for (const ch of s) {
+    if (!table[ch]) return null; // one unmappable char leaves the whole token untouched
+    out += table[ch];
+  }
+  return out;
+}
+
+// Display-only: ASCII math notation reads as Unicode glyphs in the disclosure.
+// Stored note text is never rewritten; code identifiers (my_var) and markdown
+// emphasis (_italic_) are left alone by the alnum-before/boundary-after guards.
+function prettyMath(text) {
+  let s = String(text ?? '');
+  s = s.replace(/([A-Za-z0-9)\]}])\^\{([^{}]+)\}(?![A-Za-z0-9])/g, (m, b, inner) => {
+    const sup = mapGlyphs(inner, SUPERSCRIPTS);
+    return sup ? b + sup : m;
+  });
+  s = s.replace(/([A-Za-z0-9)\]}])\^([0-9A-Za-z+\-=()])(?![A-Za-z0-9])/g, (m, b, c) => SUPERSCRIPTS[c] ? b + SUPERSCRIPTS[c] : m);
+  s = s.replace(/([A-Za-z0-9])_\{([^{}]+)\}(?![A-Za-z0-9])/g, (m, b, inner) => {
+    const sub = mapGlyphs(inner, SUBSCRIPTS);
+    return sub ? b + sub : m;
+  });
+  s = s.replace(/([A-Za-z0-9])_([0-9a-z+\-=()])(?![A-Za-z0-9])/g, (m, b, c) => SUBSCRIPTS[c] ? b + SUBSCRIPTS[c] : m);
+  s = s.replace(/\b(rho|alpha|beta|gamma|delta|epsilon|theta|lambda|sigma|tau|phi|chi|psi|omega|nabla)\b/g, (m) => GREEK[m]);
+  return s;
+}
+
 function cardModel(topic, chunks) {
   const lesson = topic.lesson || {};
   const sheet = lesson.sheet && typeof lesson.sheet === 'object' && !Array.isArray(lesson.sheet) ? lesson.sheet : {};
@@ -138,8 +170,9 @@ export async function render(container, ctx) {
         details.appendChild(quote);
         // Verbatim source string through the repo's sanitized markdown path
         // (marked -> DOMPurify), so headings read as headings. Plain-text
-        // fallback if the libraries are unavailable.
-        void ctx.rmd(quote, c.text);
+        // fallback if the libraries are unavailable. ASCII math notation is
+        // normalized to Unicode glyphs for display only — data stays verbatim.
+        void ctx.rmd(quote, prettyMath(c.text));
       }
       cardEl.appendChild(details);
     }

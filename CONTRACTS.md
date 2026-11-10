@@ -175,7 +175,9 @@ byte-identical to the §9 "What to remember" table.
 ## Sheet card structure (views/sheet.js)
 heading (`h2`, topic name) → one-sentence takeaway → ONE formula → ≤2 short notes →
 `<details class="sheet-original no-print">` "View original notes" holding the cited note chunks
-VERBATIM (text nodes; excluded from print). Card text is markdown-stripped where the card is
+VERBATIM (text nodes; excluded from print). The disclosure applies display-only Unicode glyph
+normalization (sub/superscripts, Greek names) to the passage; stored note text is never rewritten.
+Card text is markdown-stripped where the card is
 built; the old "Remember:" pitfall paragraph is gone from cards.
 
 ## Math rendering (render.js — single entry point)
