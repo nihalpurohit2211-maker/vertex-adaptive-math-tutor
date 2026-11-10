@@ -54,7 +54,7 @@ The live path is built for the [BharatCode](https://bharatcode.ai) model API —
 - Your notes **stay in your browser** (localStorage, try/catch + in-memory fallback). Vertex has no accounts and no server database.
 - Notes excerpts are sent **only to the model provider you choose in Settings**, to generate lessons. Check that provider's data terms.
 - API keys live in `sessionStorage` (gone when the tab closes) unless you tick "Remember on this device". Keys are never logged, never rendered into DOM attributes, never committed.
-- The demo is fully offline: no key, no network, and it never runs generated code. Your own notebook and pins are untouched by opening or resetting the demo.
+- The demo is fully offline: no key, no network, and it never runs generated code. Opening the demo never touches your own notebook or pins — the demo lives under its own notebook id.
 
 ## Run locally
 
