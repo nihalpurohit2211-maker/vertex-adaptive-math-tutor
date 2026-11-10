@@ -188,3 +188,40 @@ scanning, no second math library, no equation images. The same DOM is used by pr
 ## Print + mobile
 A4 portrait rules unchanged; formula blocks `overflow-x: auto` on screen (page itself never
 scrolls sideways at 360px) and `overflow: visible` in print; disclosures and controls stay hidden.
+
+---
+
+# Addendum v5 — multi-provider (BharatCode default + Google AI Studio/Gemini opt-in)
+
+The model provider is a user choice, not hardcoded. `settings.provider` ∈ PROVIDERS
+(`bharatcode` default · `gemini` · `demo`) selects the call path in `llm.json()`; the setup
+model chip and the no-key copy are provider-aware.
+
+## Settings (store.js DEFAULT_SETTINGS, persisted in `vx2.settings`)
+`provider` (default `bharatcode`) and `geminiModel` (default `DEFAULTS.geminiModel`,
+`gemini-2.5-flash`) join the existing `model`/`bharatcodeBaseUrl`/`remember`/`lang`/`hoursToStudy`.
+`getSettings`/`setSettings` validate `geminiModel` as a non-empty string and `provider` against
+PROVIDERS. `remember` relocates BOTH the bharatcode and gemini keys between session/local tiers.
+
+## Keys (unchanged storage contract, now two providers)
+`store.getKey/setKey/clearKey('bharatcode'|'gemini')` → `vx2.key.bharatcode` / `vx2.key.gemini`.
+Keys are password fields, cleared from the DOM after save, never logged, never in the repo. The
+Gemini key travels in the `x-goog-api-key` header (never a URL query param).
+
+## llm.js
+`callGeminiText` (REST `:generateContent`, base `DEFAULTS.geminiBaseUrl`) was already present and
+stays opt-in: `main.js applySettingsToLlm()` now configures `{ provider, enableGemini: true,
+geminiModel, geminiBaseUrl }` from settings on boot and on every `saveSettings`. The Gemini model
+id ALWAYS comes from config/settings — never a hardcoded constant in the call path. BharatCode
+remains the default and the only provider armed out of the box.
+
+## CSP (index.html)
+`connect-src 'self' https://bharatcode.ai https://generativelanguage.googleapis.com` — the Gemini
+origin is required for the opt-in provider's browser fetch. scripts/check.mjs asserts both live
+provider origins are present (row "CSP connect-src allows live providers (Addendum v5)").
+
+## UI (views/settings.js, views/setup.js)
+Settings modal: a provider `<select>` then only the active provider's section (BharatCode key +
+model select, or Gemini key + editable model id with a datalist of current Flash-tier names) plus
+the provider's get-a-key link. Provider/model changes call `ctx.rerender()` so the setup chip
+updates live behind the modal. Demo provider needs no key.

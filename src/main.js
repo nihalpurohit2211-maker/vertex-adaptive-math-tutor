@@ -401,6 +401,7 @@ const state = {
     provider: 'bharatcode',
     remember: false,
     bharatcodeBaseUrl: DEFAULTS.bharatcodeBaseUrl,
+    geminiModel: DEFAULTS.geminiModel,
   },
   notebook: null,
   build: { active: false, stage: -1 },
@@ -751,9 +752,16 @@ function updateSheetCount() {
 function applySettingsToLlm() {
   if (deps.llm && typeof deps.llm.configure === 'function') {
     deps.llm.configure({
+      provider: state.settings.provider,
       baseUrl: state.settings.bharatcodeBaseUrl || DEFAULTS.bharatcodeBaseUrl,
       model: state.settings.model,
       lang: state.settings.lang,
+      // Gemini is opt-in via the provider select (Addendum v5). Arming the flag
+      // here is harmless while provider !== "gemini"; the model id always comes
+      // from settings, never a hardcoded constant in the call path.
+      enableGemini: true,
+      geminiModel: state.settings.geminiModel || DEFAULTS.geminiModel,
+      geminiBaseUrl: DEFAULTS.geminiBaseUrl,
     });
   }
 }
@@ -821,12 +829,16 @@ function setBuildStage(i) {
 
 async function buildCourse({ notesRaw, syllabusRaw, hours }) {
   const provider = state.settings.provider || 'bharatcode';
-  if (provider === 'bharatcode') {
+  // Any live provider needs its own key before we spend a build cycle; the demo
+  // provider is keyless. setupError.kind "no_key" drives the provider-aware copy
+  // in views/setup.js (Addendum v5).
+  if (provider !== 'demo') {
+    const keyName = provider === 'gemini' ? 'gemini' : 'bharatcode';
     let key = null;
-    try { key = await deps.store.getKey('bharatcode'); }
+    try { key = await deps.store.getKey(keyName); }
     catch (err) { console.warn('main.js: getKey failed —', err.message); }
     if (!key) {
-      state.setupError = { kind: 'no_key' };
+      state.setupError = { kind: 'no_key', provider };
       route();
       return;
     }

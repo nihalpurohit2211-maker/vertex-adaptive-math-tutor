@@ -204,6 +204,7 @@ const DEFAULT_SETTINGS = Object.freeze({
   provider: 'bharatcode',
   remember: false,
   bharatcodeBaseUrl: DEFAULTS.bharatcodeBaseUrl,
+  geminiModel: DEFAULTS.geminiModel,
 });
 
 export function getSettings() {
@@ -228,6 +229,9 @@ export function getSettings() {
     if (typeof stored.bharatcodeBaseUrl === 'string' && stored.bharatcodeBaseUrl.trim()) {
       merged.bharatcodeBaseUrl = stored.bharatcodeBaseUrl;
     }
+    if (typeof stored.geminiModel === 'string' && stored.geminiModel.trim()) {
+      merged.geminiModel = stored.geminiModel.trim();
+    }
   }
   return merged;
 }
@@ -245,6 +249,9 @@ export function setSettings(partial) {
     if (typeof partial.remember === 'boolean') next.remember = partial.remember;
     if (typeof partial.bharatcodeBaseUrl === 'string' && partial.bharatcodeBaseUrl.trim()) {
       next.bharatcodeBaseUrl = partial.bharatcodeBaseUrl.trim();
+    }
+    if (typeof partial.geminiModel === 'string' && partial.geminiModel.trim()) {
+      next.geminiModel = partial.geminiModel.trim();
     }
   }
   tierSet('local', STORAGE.settings, JSON.stringify(next));

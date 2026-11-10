@@ -57,3 +57,17 @@
 - Browser evidence @8766: 4 pins incl. legacy Newton; katexCount 3, zero raw LaTeX/backslashes in visible text; disclosure typeset (no "## ") + no-print; 360px iframe: no sideways scroll, formula overflow-x auto; print iframe (media flipped): 724px ≤ 1032, controls+details hidden, black on white, 16px math; malformed 'x_{' + empty formula → Unicode fallback with single console warn; network: katex css+woff2 all localhost.
 - Gates: check.mjs 37/37 (2 new rows), tests 35/35 (+4 sheet cases). README sheet bullet synced.
 - Human checklist unchanged (+ still: GitHub repo/push, key T1–T4, retired-file approval, browser-pane screenshots).
+
+## W6 — multi-provider: Google AI Studio (Gemini) opt-in (Addendum v5)
+- User ask: "dont hard code it to bharat, give an option to use any api, mostly google ai studio" + "default will be ours". BharatCode stays the default; Gemini is a selectable provider.
+- Backend already existed (llm.js callGeminiText, store gemini key tier) but was flag-off and UI-hidden. Wired it end-to-end:
+  - contracts.js DEFAULTS += geminiModel ("gemini-2.5-flash"), geminiBaseUrl (generativelanguage.googleapis.com/v1beta).
+  - store.js DEFAULT_SETTINGS/getSettings/setSettings += geminiModel (provider already handled).
+  - main.js: state.settings += geminiModel; applySettingsToLlm now configures {provider, enableGemini:true, geminiModel, geminiBaseUrl}; buildCourse no-key gate generalized to any non-demo provider (setupError carries provider).
+  - settings.js rewritten: provider <select> (BharatCode/Gemini/Demo) + only the active provider's section (key password field + model; Gemini model is an editable id with datalist). remember applies to both keys. provider/model changes call ctx.rerender() so the setup chip syncs live behind the modal.
+  - setup.js: model chip + no_key copy are provider-aware ("Google AI Studio · gemini-2.5-flash"; "Add a Google AI Studio (Gemini) key…").
+  - index.html CSP connect-src += https://generativelanguage.googleapis.com (else the browser blocks the Gemini fetch).
+  - check.mjs new row "CSP connect-src allows live providers (Addendum v5)" asserts both bharatcode.ai and generativelanguage.googleapis.com.
+- Browser evidence @8765: default chip "BharatCode · qwen-3.8-27b"; switch→Gemini persists (vx2.settings.provider=gemini), sections swap, chip updates live to "Google AI Studio · gemini-2.5-flash" and survives reload; Gemini key saves to vx2.key.gemini and clears from the DOM input; provider=gemini + no key + "Use my notes" → "Add a Google AI Studio (Gemini) key to use your notes, or try the demo." Reset to bharatcode default after test.
+- Gates: check.mjs 38/38 (1 new row), tests 35/35. CONTRACTS.md Addendum v5 appended.
+- NOT done (human): live Gemini smoke test with a real AI Studio key (T1–T4 path) — needs a human key; no key in repo. Push to main/Render pending user confirmation.

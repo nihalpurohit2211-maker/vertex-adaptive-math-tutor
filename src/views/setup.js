@@ -108,11 +108,17 @@ export async function render(container, ctx) {
   ]));
 
   const buildBtn = h('button', { type: 'button', class: 'btn btn-primary', id: 'btn-build', text: 'Use my notes' });
+  const prov = state.settings.provider || 'bharatcode';
+  const chipLabel = prov === 'demo'
+    ? 'Demo'
+    : prov === 'gemini'
+      ? 'Google AI Studio · ' + (state.settings.geminiModel || DEFAULTS.geminiModel)
+      : 'BharatCode · ' + state.settings.model;
   const modelChip = h('button', {
     type: 'button', class: 'model-chip', id: 'model-chip',
-    'aria-label': 'Model: ' + (state.settings.provider === 'demo' ? 'Demo' : 'BharatCode') + ' ' + state.settings.model + '. Open settings to change.',
+    'aria-label': 'Model: ' + chipLabel + '. Open settings to change.',
   }, [
-    'Model: ' + (state.settings.provider === 'demo' ? 'Demo' : 'BharatCode') + ' · ' + state.settings.model + ' ',
+    'Model: ' + chipLabel + ' ',
     h('span', { class: 'caret', 'aria-hidden': 'true', text: '▾' }),
   ]);
   modelChip.addEventListener('click', actions.openSettings);
@@ -134,7 +140,9 @@ export async function render(container, ctx) {
     const err = state.setupError;
     const box = h('div', { class: 'error-box', role: 'alert' });
     if (err.kind === 'no_key') {
-      box.appendChild(h('p', { text: 'Add a BharatCode key to use your notes, or try the demo.' }));
+      const wantProvider = err.provider || state.settings.provider || 'bharatcode';
+      const providerName = wantProvider === 'gemini' ? 'Google AI Studio (Gemini)' : 'BharatCode';
+      box.appendChild(h('p', { text: 'Add a ' + providerName + ' key to use your notes, or try the demo.' }));
       const keyBtn = h('button', { type: 'button', class: 'btn btn-ghost btn-sm', text: 'Add a key in settings' });
       keyBtn.addEventListener('click', actions.openSettings);
       const demoBtn2 = h('button', { type: 'button', class: 'btn btn-primary btn-sm', text: 'Try the demo' });

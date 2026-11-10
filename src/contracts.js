@@ -56,6 +56,11 @@ export const DEFAULTS = {
   lang: "en", // "en" | "hinglish" (F30 is P1; plumbing exists, toggle hidden)
   modelBharatcode: "qwen-3.8-27b",
   bharatcodeBaseUrl: "https://bharatcode.ai/api/model/v1",
+  // Google AI Studio (Gemini) — opt-in provider (Addendum v5). The model id is
+  // a user-editable default, never a hardcoded constant in the call path:
+  // llm.json reads it from config.geminiModel, which settings.js persists.
+  geminiModel: "gemini-2.5-flash",
+  geminiBaseUrl: "https://generativelanguage.googleapis.com/v1beta",
   concurrency: 2,
   citationOverlapMin: 0.25,
   traceDecimals: 4,

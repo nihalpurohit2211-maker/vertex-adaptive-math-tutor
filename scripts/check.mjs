@@ -704,6 +704,18 @@ if (indexHtml === null) {
     /http-equiv=["']?Content-Security-Policy/i.test(indexHtml),
     /http-equiv=["']?Content-Security-Policy/i.test(indexHtml) ? "" : "no CSP <meta> found (plan §6.8 — Track C adds it last)"
   );
+  // Addendum v5: the CSP connect-src must allow every live provider origin, or
+  // the browser blocks the model call. BharatCode is the default; Gemini is the
+  // opt-in provider added in v5.
+  const cspContent = (indexHtml.match(/http-equiv=["']?Content-Security-Policy["']?\s+content="([^"]*)"/i) || [, ""])[1];
+  const connectSrc = (cspContent.match(/connect-src\s+([^;]*)/i) || [, ""])[1];
+  const neededOrigins = ["https://bharatcode.ai", "https://generativelanguage.googleapis.com"];
+  const missingOrigins = neededOrigins.filter((o) => !connectSrc.includes(o));
+  add(
+    "CSP connect-src allows live providers (Addendum v5)",
+    missingOrigins.length === 0,
+    missingOrigins.length ? "connect-src missing: " + missingOrigins.join(", ") : ""
+  );
 }
 
 // ---- 15. Addendum v4 — vendored KaTeX + scan-ready sheet cards ----------------
