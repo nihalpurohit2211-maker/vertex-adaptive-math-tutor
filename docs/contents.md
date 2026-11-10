@@ -1,9 +1,11 @@
 # docs/ contents — screenshots for the README (plan 3)
 
-The orchestrator captures these during Wave 3 with the built-in browser at
-http://localhost:8766 (1280 px desktop / 360 px mobile), using the curated
-demo so they match exactly what judges see. The human reviews and may
-replace with real-device shots. Light theme is the app's own palette.
+Capture is blocked while the in-app Browser pane is hidden (screenshot returns
+NATIVE_BROWSER_VIEWPORT_UNAVAILABLE). Open that pane once and the orchestrator
+can auto-capture all four at http://localhost:8766 (1280 px desktop / 360 px
+mobile), using the curated demo so they match exactly what judges see.
+Otherwise take them manually from a normal browser at the same URL. Light
+theme is the app's own palette.
 
 | File | Screen | What must be visible |
 |---|---|---|
