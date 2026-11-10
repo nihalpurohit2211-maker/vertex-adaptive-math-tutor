@@ -71,46 +71,6 @@ function checkSourcedItem(item, where, errors, chunkIdSet) {
   }
 }
 
-function checkTrace(trace, where, errors) {
-  if (!trace || typeof trace !== "object") {
-    errors.push(where + ": must be null or a trace object { title, code, computed, result, narration, takeaway }");
-    return;
-  }
-  if (!isStr(trace.title)) errors.push(where + ".title: must be a non-empty string");
-  if (!isStr(trace.code)) errors.push(where + ".code: must be a non-empty string defining function run()");
-  if (typeof trace.computed !== "boolean") errors.push(where + ".computed: must be true or false");
-  if (trace.computed === true && (trace.result === null || trace.result === undefined)) {
-    errors.push(where + ".result: required when computed is true");
-  }
-  if (trace.result !== null && trace.result !== undefined) {
-    const r = trace.result;
-    if (!r || typeof r !== "object") {
-      errors.push(where + ".result: must be an object { columns, rows, answer }");
-    } else {
-      if (!isStringArray(r.columns) || r.columns.length === 0) {
-        errors.push(where + ".result.columns: must be a non-empty array of strings");
-      }
-      if (!Array.isArray(r.rows)) {
-        errors.push(where + ".result.rows: must be an array of rows");
-      } else {
-        if (r.rows.length > 8) errors.push(where + ".result.rows: at most 8 rows (got " + r.rows.length + ")");
-        r.rows.forEach((row, i) => {
-          if (!Array.isArray(row)) {
-            errors.push(where + ".result.rows[" + i + "]: must be an array of number|string|number[]");
-          } else if (Array.isArray(r.columns) && row.length !== r.columns.length) {
-            errors.push(where + ".result.rows[" + i + "]: has " + row.length + " cells but " + r.columns.length + " columns");
-          }
-        });
-      }
-      if (!isStr(r.answer)) errors.push(where + ".result.answer: must be a non-empty string");
-    }
-  }
-  if (!Array.isArray(trace.narration) || !trace.narration.every((x) => typeof x === "string")) {
-    errors.push(where + ".narration: must be an array of strings");
-  }
-  if (!isStr(trace.takeaway)) errors.push(where + ".takeaway: must be a non-empty string");
-}
-
 // ---- Validators (return true, or an array of human-readable errors) ----------
 
 /** Validate a topic_map reply per plan 6.2/7.1; returns true or string[]. */
@@ -176,10 +136,16 @@ export function validateTopicMap(obj) {
 }
 
 /**
- * Validate a Lesson per CONTRACTS.md / plan 6.2 (steps <= 5, trace contract with
- * <= 8 rows, examQuestion present). topicKind "numeric" requires a trace.
+ * Validate a Lesson per CONTRACTS.md Addendum v3 / plan 6.2 as amended by
+ * plan3: steps <= 5, examQuestion present, meta present. `trace` is OPTIONAL
+ * and IGNORED (plan3 §6.3 / Addendum v3 trace deprecation): a lesson is valid
+ * whether trace is absent, null, or even malformed — trace left the product
+ * flow and legacy notebooks must validate without it. topicKind is accepted
+ * for signature compatibility with llm.js/prompts.js callers but no longer
+ * changes the rules.
  */
 export function validateLesson(obj, topicKind) {
+  void topicKind; // retained in the frozen signature; trace no longer required
   const errors = [];
   if (!obj || typeof obj !== "object") {
     return ["lesson: must be an object"];
@@ -201,11 +167,8 @@ export function validateLesson(obj, topicKind) {
   }
   if (!isStringArray(obj.notesGaps)) errors.push("notesGaps: must be an array of strings");
 
-  if (obj.trace === null || obj.trace === undefined) {
-    if (topicKind === "numeric") errors.push("trace: required for numeric topics (provide trace.code with a run() function)");
-  } else {
-    checkTrace(obj.trace, "trace", errors);
-  }
+  // trace: optional and ignored (plan3 §6.3). Present-or-absent both valid;
+  // no trace-specific enforcement remains here.
 
   if (obj.diagramMermaid !== null && obj.diagramMermaid !== undefined && typeof obj.diagramMermaid !== "string") {
     errors.push("diagramMermaid: must be null or a string");

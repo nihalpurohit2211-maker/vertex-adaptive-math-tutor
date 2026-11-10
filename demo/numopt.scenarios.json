@@ -1,0 +1,59 @@
+{
+  "id": "numopt-scenarios-v1",
+  "notebookId": "nb-numopt-demo",
+  "topicId": "t1",
+  "title": "The step was downhill. Why did it get worse?",
+  "source": "curated",
+  "usage": "Reviewed plan3 §3 hero-lesson content. Plain-text explanations only; the UI renders the bowl sketch as static SVG from the description below. Scenario choices are page state and never modify coverage, pins, priority, or exported notebook data.",
+  "scenarios": [
+    {
+      "id": "gd-A",
+      "heading": "Scenario A · Overshooting",
+      "setup": "You are running gradient descent on a smooth bowl-shaped objective. Your direction points downhill locally. After a large step, you land on the other side of the valley and the objective is higher.",
+      "prompt": "What would you try first?",
+      "choices": [
+        {
+          "id": "a1",
+          "label": "Reduce the step size",
+          "reveal": "The direction describes what happens close to where you are. A large step can carry you past the low point and up the other side.",
+          "recommended": true
+        },
+        {
+          "id": "a2",
+          "label": "Reverse the direction",
+          "reveal": "Reversing a downhill direction points uphill locally. The large move is the part to reconsider in this scenario."
+        },
+        {
+          "id": "a3",
+          "label": "Take a larger step",
+          "reveal": "A longer move can carry you farther up the other side of the valley. Try a shorter candidate step first."
+        }
+      ],
+      "visual": {
+        "label": "Concept sketch",
+        "description": "A hand-authored, qualitative bowl (a smooth U-shaped curve) with a starting point on the left slope. A dashed arrow labelled \"Long jump\" arcs from the start point across and up the right slope, ending above the starting height. A solid arrow labelled \"Shorter step\" moves from the same start point to a spot just past the bottom of the bowl, clearly lower than the dashed landing. The minimum at the base of the bowl is marked. Diagram labels stay readable as text on mobile; dashed versus solid lines carry the distinction as well as colour.",
+        "screenReaderSummary": "Concept sketch: a downhill direction with a long jump overshoots to a higher point on the far side of the valley, while a shorter step lands near the bottom."
+      }
+    },
+    {
+      "id": "gd-B",
+      "heading": "Scenario B · A tiny decrease",
+      "setup": "The next candidate step lowers the objective a little. It still fails the Armijo sufficient-decrease check.",
+      "prompt": "Does any decrease pass Armijo?",
+      "choices": [
+        {
+          "id": "b1",
+          "label": "Any decrease is enough.",
+          "reveal": "Armijo asks whether the decrease is sufficient for this candidate step and local slope."
+        },
+        {
+          "id": "b2",
+          "label": "The decrease must be sufficient.",
+          "reveal": "Backtracking can shorten the candidate step and test it again.",
+          "recommended": true
+        }
+      ],
+      "takeaway": "The direction tells you where to go. Step size controls how far you go. Armijo checks for sufficient decrease."
+    }
+  ]
+}

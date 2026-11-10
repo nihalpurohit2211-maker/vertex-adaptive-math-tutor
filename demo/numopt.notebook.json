@@ -1,44 +1,37 @@
 {
   "id": "nb-numopt-demo",
-  "title": "Numerical Optimization & Linear Algebra - exam-eve notes [SAMPLE demo notebook]",
+  "title": "Numerical Optimization - exam-eve notes [SAMPLE demo notebook]",
   "createdAt": "2026-11-10T16:20:00.000Z",
   "notes": {
-    "raw": "# Numerical Optimization & Linear Algebra — exam-eve notes\n\n*typed at 1am, 9am exam. only wrote what i half-remember, sorry future me. abbrevs: gd = gradient descent, f' = derivative, grad = gradient vector, H = Hessian.*\n\n## 1. Gradient Descent (GD, \"steepest descent\")\n\nidea: grad f points UPHILL, so walk opposite it. update rule: x_{k+1} = x_k − alpha · grad f(x_k). alpha = step size / learning rate. if alpha too big → oscillate then diverge (saw it blow up in tutorial); too small → crawls. stop when ||grad|| ~ 0. for convex f this converges to the global min (proof was lecture 4, not in these notes). every lecture sheet calls it \"gd\", prof writes eta for alpha.\n\n### GD tiny numerical example (tutorial 3, this one is solid)\n\nf(x) = x^2, so grad = 2x, start x0 = 4, alpha = 0.1:\nx1 = 4 − 0.1·(2·4) = 4 − 0.8 = 3.2\nx2 = 3.2 − 0.1·6.4 = 2.56\nx3 = 2.56 − 0.512 = 2.048\npattern: each step multiplies error by 0.8 (= 1 − 2·alpha), linear convergence, marches down to the min at 0. with alpha = 0.3 the factor is 0.4 and it hits 1.6, 0.64, 0.256 — same rule, shrinks faster. don't push alpha past 1 for this f or the factor flips past −1 and it diverges past the min. prof loves asking \"what does alpha control\" — tradeoff between step length and speed; too big overshoots past the min every iteration instead of shrinking toward it.\n\n## 2. Newton's Method (Newton–Raphson)\n\nfor solving f(x) = 0: linearize at x_k, i.e. f(x_k) + f'(x_k)(x − x_k) = 0, solve that line for where it crosses zero: x_{k+1} = x_k − f(x_k)/f'(x_k). geometrically: the tangent at x_k is the line y = f(x_k) + f'(x_k)(x − x_k); set y = 0, solve, that's the next x. repeat. converges QUADRATICALLY near a simple root — error constant e_{k+1} ≈ [f''(x*)/(2f'(x*))]·e_k^2, so right digits double each step — massively faster than gd, but only LOCAL: bad x0 → jumps to another root or blows up. breaks when f'(x_k) = 0 (divide by it). standard way to get sqrt's: f(x) = x^2 − a.\n\n### newton for MINIMIZATION — attempted derivation (INCOMPLETE!!)\n\nwant grad f(x) = 0, so run Newton–Raphson on g(x) = grad f(x). Jacobian of g is the Hessian H(x_k) (entries H_ij = d^2f / dx_i dx_j). so:\nx_{k+1} = x_k − H(x_k)^{−1} · grad f(x_k).\nscalar sanity check: f = x^2, H = 2, grad = 2x → x − 2x/2 = 0, lands on the min in one step, neat.\nBUT inverting a full n×n H every single step is total pain for big n. so the trick must be to keep some M_k ≈ H^{−1} cheaply and only UPDATE it each step using the new s_k ... where do i even start — THAT'S WHERE I GOT STUCK. ask Arav before the exam, this is definitely 10 marks.\n\n## 3. Line search (Armijo condition) — one thing i copied off slide 14\n\nchoose t_k so we don't overshoot: sufficient decrease rule f(x_k + t·d_k) ≤ f(x_k) + c·t·grad f(x_k)^T d_k with c = 1e-4, start at t = 1 and backtrack t → t/2 until it holds (a.k.a. backtracking line search).\n\n## 4. Quasi-Newton methods / BFGS (formula paste — zero intuition written, missed the lecture)\n\nthe BFGS update (inverse-Hessian version, straight off the slide):\nH_{k+1} = (I − rho_k · s_k y_k^T) H_k (I − rho_k · y_k s_k^T) + rho_k · s_k s_k^T,   rho_k = 1/(y_k^T s_k),   s_k = x_{k+1} − x_k,   y_k = g_{k+1} − g_k where g = grad f.\nstart with H_0 = I presumably. DFP is \"similar, terms swapped\" — did not check. y^T s > 0 supposedly keeps H \"positive definite\" so directions stay descent?? none of this is explained anywhere in my notes, just the formula.\n\n*that's all i have. unit 2 matrices chapter i literally did not open — will lose marks, whatever.*\n",
+    "raw": "# Numerical Optimization — exam-eve notes\n\n*typed at 1am, 9am exam. only wrote what i half-remember, sorry future me. abbrevs: gd = gradient descent, f' = derivative, grad = gradient vector, H = Hessian.*\n\n## 1. Gradient descent (gd, steepest descent)\n\nUse the negative gradient as the downhill direction. The learning rate controls the step size. A step that is too large can overshoot the minimum. update rule: x_{k+1} = x_k − alpha · grad f(x_k), alpha = step size / learning rate. prof writes eta for alpha. too small → crawls; too big → oscillate then diverge (saw it blow up in tutorial 3). stop when ||grad|| ~ 0. for convex f, gd converges to the global min (lecture 4 proof, not in these notes). every lecture sheet calls it gd but steepest descent is the formal name.\n\n### gd tiny numerical example (tutorial 3, this part is solid)\n\nf(x) = x^2, grad = 2x, x0 = 4, alpha = 0.1 → x1 = 4 − 0.1·8 = 3.2, x2 = 2.56, x3 = 2.048. each step multiplies the error by 0.8 (= 1 − 2·alpha): linear convergence, marches down to the min at 0. with alpha = 0.3 the factor is 0.4, same gd rule, shrinks faster. don't push alpha past 1 for this f or the factor flips past −1 and gradient descent diverges past the minimum instead of shrinking toward it. prof loves asking what the learning rate controls — step length vs speed in steepest descent.\n\n## 2. Newton (Newton–Raphson)\n\nUse the gradient and local curvature to choose an update. In one dimension the Newton update divides the derivative by the second derivative when that curvature is usable. for roots f(x) = 0: linearize at x_k, jump to where the tangent crosses zero: x_{k+1} = x_k − f(x_k)/f'(x_k). converges QUADRATICALLY near a simple root — correct digits roughly double each step, massively faster than gd, but only LOCAL: bad x0 → jumps to another root or blows up. breaks when f'(x_k) = 0 (it divides by it). sqrt trick: f(x) = x^2 − a.\n\n### newton for MINIMIZATION — attempted derivation (INCOMPLETE!!)\n\nwant grad f(x) = 0, so run Newton–Raphson on g(x) = grad f(x). Jacobian of g is H (the matrix of second derivatives, entries d^2f/dx_i dx_j), so the step becomes x_{k+1} = x_k − H(x_k)^{−1} · grad f(x_k). scalar sanity check: f = x^2, H = 2, grad = 2x → x − 2x/2 = 0, lands on the min in one step, neat. BUT inverting a full n×n H every single step is total pain for big n. so the trick must be to keep some M_k ≈ H^{−1} cheaply and just re-fit it each step using the new s_k ... where do i even start — THAT'S WHERE I GOT STUCK. ask Arav before the exam, definitely 10 marks.\n\n## 3. Line search (Armijo condition) — copied off slide 14, one line only\n\nArmijo = sufficient decrease. Need to revise the condition. something about picking t_k so f(x_k + t·d_k) ≤ f(x_k) + c·t·grad f(x_k)^T d_k with c = 1e-4, then backtracking t → t/2 until it holds? unsure — no worked example written, that is exactly what i need to revise.\n\n## 4. Quasi-Newton / BFGS (formula paste — zero intuition, missed the lecture)\n\nBFGS updates a Hessian approximation using changes in position and gradient. pasted off the slide (inverse-Hessian version): H_{k+1} = (I − rho_k · s_k y_k^T) H_k (I − rho_k · y_k s_k^T) + rho_k · s_k s_k^T, rho_k = 1/(y_k^T s_k), s = position change, y = gradient change. start with H_0 = I presumably. DFP is \"similar, terms swapped\" — did not check. y^T s > 0 supposedly keeps it positive definite?? none of this is explained in my notes, just the formula.\n\n*that's all i have. unit 2 matrices chapter i literally did not open — will lose marks, whatever.*\n",
     "chunks": [
       {
         "id": "c1",
-        "text": "# Numerical Optimization & Linear Algebra — exam-eve notes\n\n*typed at 1am, 9am exam. only wrote what i half-remember, sorry future me. abbrevs: gd = gradient descent, f' = derivative, grad = gradient vector, H = Hessian.*\n\n## 1. Gradient Descent (GD, \"steepest descent\")\n\nidea: grad f points UPHILL, so walk opposite it. update rule: x_{k+1} = x_k − alpha · grad f(x_k). alpha = step size / learning rate. if alpha too big → oscillate then diverge (saw it blow up in tutorial); too small → crawls. stop when ||grad|| ~ 0. for convex f this converges to the global min (proof was lecture 4, not in these notes). every lecture sheet calls it \"gd\", prof writes eta for alpha."
+        "text": "# Numerical Optimization — exam-eve notes\n\n*typed at 1am, 9am exam. only wrote what i half-remember, sorry future me. abbrevs: gd = gradient descent, f' = derivative, grad = gradient vector, H = Hessian.*\n\n## 1. Gradient descent (gd, steepest descent)\n\nUse the negative gradient as the downhill direction. The learning rate controls the step size. A step that is too large can overshoot the minimum. update rule: x_{k+1} = x_k − alpha · grad f(x_k), alpha = step size / learning rate. prof writes eta for alpha. too small → crawls; too big → oscillate then diverge (saw it blow up in tutorial 3). stop when ||grad|| ~ 0. for convex f, gd converges to the global min (lecture 4 proof, not in these notes). every lecture sheet calls it gd but steepest descent is the formal name."
       },
       {
         "id": "c2",
-        "text": "### GD tiny numerical example (tutorial 3, this one is solid)\n\nf(x) = x^2, so grad = 2x, start x0 = 4, alpha = 0.1:\nx1 = 4 − 0.1·(2·4) = 4 − 0.8 = 3.2\nx2 = 3.2 − 0.1·6.4 = 2.56\nx3 = 2.56 − 0.512 = 2.048\npattern: each step multiplies error by 0.8 (= 1 − 2·alpha), linear convergence, marches down to the min at 0. with alpha = 0.3 the factor is 0.4 and it hits 1.6, 0.64, 0.256 — same rule, shrinks faster. don't push alpha past 1 for this f or the factor flips past −1 and it diverges past the min. prof loves asking \"what does alpha control\" — tradeoff between step length and speed; too big overshoots past the min every iteration instead of shrinking toward it."
+        "text": "### gd tiny numerical example (tutorial 3, this part is solid)\n\nf(x) = x^2, grad = 2x, x0 = 4, alpha = 0.1 → x1 = 4 − 0.1·8 = 3.2, x2 = 2.56, x3 = 2.048. each step multiplies the error by 0.8 (= 1 − 2·alpha): linear convergence, marches down to the min at 0. with alpha = 0.3 the factor is 0.4, same gd rule, shrinks faster. don't push alpha past 1 for this f or the factor flips past −1 and gradient descent diverges past the minimum instead of shrinking toward it. prof loves asking what the learning rate controls — step length vs speed in steepest descent.\n\n## 2. Newton (Newton–Raphson)\n\nUse the gradient and local curvature to choose an update. In one dimension the Newton update divides the derivative by the second derivative when that curvature is usable. for roots f(x) = 0: linearize at x_k, jump to where the tangent crosses zero: x_{k+1} = x_k − f(x_k)/f'(x_k). converges QUADRATICALLY near a simple root — correct digits roughly double each step, massively faster than gd, but only LOCAL: bad x0 → jumps to another root or blows up. breaks when f'(x_k) = 0 (it divides by it). sqrt trick: f(x) = x^2 − a."
       },
       {
         "id": "c3",
-        "text": "## 2. Newton's Method (Newton–Raphson)\n\nfor solving f(x) = 0: linearize at x_k, i.e. f(x_k) + f'(x_k)(x − x_k) = 0, solve that line for where it crosses zero: x_{k+1} = x_k − f(x_k)/f'(x_k). geometrically: the tangent at x_k is the line y = f(x_k) + f'(x_k)(x − x_k); set y = 0, solve, that's the next x. repeat. converges QUADRATICALLY near a simple root — error constant e_{k+1} ≈ [f''(x*)/(2f'(x*))]·e_k^2, so right digits double each step — massively faster than gd, but only LOCAL: bad x0 → jumps to another root or blows up. breaks when f'(x_k) = 0 (divide by it). standard way to get sqrt's: f(x) = x^2 − a."
+        "text": "### newton for MINIMIZATION — attempted derivation (INCOMPLETE!!)\n\nwant grad f(x) = 0, so run Newton–Raphson on g(x) = grad f(x). Jacobian of g is H (the matrix of second derivatives, entries d^2f/dx_i dx_j), so the step becomes x_{k+1} = x_k − H(x_k)^{−1} · grad f(x_k). scalar sanity check: f = x^2, H = 2, grad = 2x → x − 2x/2 = 0, lands on the min in one step, neat. BUT inverting a full n×n H every single step is total pain for big n. so the trick must be to keep some M_k ≈ H^{−1} cheaply and just re-fit it each step using the new s_k ... where do i even start — THAT'S WHERE I GOT STUCK. ask Arav before the exam, definitely 10 marks."
       },
       {
         "id": "c4",
-        "text": "### newton for MINIMIZATION — attempted derivation (INCOMPLETE!!)\n\nwant grad f(x) = 0, so run Newton–Raphson on g(x) = grad f(x). Jacobian of g is the Hessian H(x_k) (entries H_ij = d^2f / dx_i dx_j). so:\nx_{k+1} = x_k − H(x_k)^{−1} · grad f(x_k).\nscalar sanity check: f = x^2, H = 2, grad = 2x → x − 2x/2 = 0, lands on the min in one step, neat.\nBUT inverting a full n×n H every single step is total pain for big n. so the trick must be to keep some M_k ≈ H^{−1} cheaply and only UPDATE it each step using the new s_k ... where do i even start — THAT'S WHERE I GOT STUCK. ask Arav before the exam, this is definitely 10 marks."
-      },
-      {
-        "id": "c5",
-        "text": "## 3. Line search (Armijo condition) — one thing i copied off slide 14\n\nchoose t_k so we don't overshoot: sufficient decrease rule f(x_k + t·d_k) ≤ f(x_k) + c·t·grad f(x_k)^T d_k with c = 1e-4, start at t = 1 and backtrack t → t/2 until it holds (a.k.a. backtracking line search)."
-      },
-      {
-        "id": "c6",
-        "text": "## 4. Quasi-Newton methods / BFGS (formula paste — zero intuition written, missed the lecture)\n\nthe BFGS update (inverse-Hessian version, straight off the slide):\nH_{k+1} = (I − rho_k · s_k y_k^T) H_k (I − rho_k · y_k s_k^T) + rho_k · s_k s_k^T,   rho_k = 1/(y_k^T s_k),   s_k = x_{k+1} − x_k,   y_k = g_{k+1} − g_k where g = grad f.\nstart with H_0 = I presumably. DFP is \"similar, terms swapped\" — did not check. y^T s > 0 supposedly keeps H \"positive definite\" so directions stay descent?? none of this is explained anywhere in my notes, just the formula.\n\n*that's all i have. unit 2 matrices chapter i literally did not open — will lose marks, whatever.*\n"
+        "text": "## 3. Line search (Armijo condition) — copied off slide 14, one line only\n\nArmijo = sufficient decrease. Need to revise the condition. something about picking t_k so f(x_k + t·d_k) ≤ f(x_k) + c·t·grad f(x_k)^T d_k with c = 1e-4, then backtracking t → t/2 until it holds? unsure — no worked example written, that is exactly what i need to revise.\n\n## 4. Quasi-Newton / BFGS (formula paste — zero intuition, missed the lecture)\n\nBFGS updates a Hessian approximation using changes in position and gradient. pasted off the slide (inverse-Hessian version): H_{k+1} = (I − rho_k · s_k y_k^T) H_k (I − rho_k · y_k s_k^T) + rho_k · s_k s_k^T, rho_k = 1/(y_k^T s_k), s = position change, y = gradient change. start with H_0 = I presumably. DFP is \"similar, terms swapped\" — did not check. y^T s > 0 supposedly keeps it positive definite?? none of this is explained in my notes, just the formula.\n\n*that's all i have. unit 2 matrices chapter i literally did not open — will lose marks, whatever.*"
       }
     ]
   },
   "syllabus": {
-    "raw": "Unit 1 (Unconstrained Optimization): Gradient descent\nUnit 1 (Unconstrained Optimization): Newton's method\nUnit 1 (Unconstrained Optimization): Line search (Armijo condition)\nUnit 1 (Unconstrained Optimization): Quasi-Newton methods (BFGS)\nUnit 2 (Linear Algebra): Gram-Schmidt orthogonalization\nUnit 2 (Linear Algebra): Conjugate gradient method\n",
+    "raw": "Unit 1 (Unconstrained Optimization): Gradient descent\nUnit 1 (Unconstrained Optimization): Newton’s method\nUnit 1 (Unconstrained Optimization): Armijo line search\nUnit 1 (Unconstrained Optimization): Quasi-Newton / BFGS\nUnit 2 (Linear Algebra): Gram–Schmidt\nUnit 2 (Linear Algebra): Conjugate gradient\n",
     "source": "pasted"
   },
   "settings": {
     "hoursToStudy": 3,
     "lang": "en"
   },
+  "revisionPins": [],
   "topics": [
     {
       "id": "t1",
@@ -61,15 +54,83 @@
           "c2"
         ]
       },
-      "rating": "knew",
+      "rating": "kinda",
       "after": null,
-      "lesson": null
+      "lesson": {
+        "oneLiner": "Move along the negative gradient: it points downhill only locally, and the learning rate decides how far one step goes - too large a step overshoots the minimum.",
+        "why": "Your notes get the direction right but leave step size feeling arbitrary; the two What-would-you-do scenarios on this lesson show what actually changes when a large step lands on the far side of the valley.",
+        "analogy": "Walking straight down a hillside in fog: each step follows the steepest local slope, and your stride length decides whether you reach the valley floor or fly past it.",
+        "steps": [
+          {
+            "text": "Use the negative gradient as the downhill direction, and the learning rate controls the step size.",
+            "source": "notes",
+            "chunkIds": [
+              "c1"
+            ]
+          },
+          {
+            "text": "A step that is too large can overshoot the minimum - shorten the candidate step before blaming the direction.",
+            "source": "notes",
+            "chunkIds": [
+              "c1"
+            ]
+          },
+          {
+            "text": "On f(x) = x^2 with alpha = 0.1 each gd step multiplies the error by 0.8 and marches down to the min.",
+            "source": "notes",
+            "chunkIds": [
+              "c2"
+            ]
+          },
+          {
+            "text": "Pick the direction first (steepest descent), then choose the step size - a fixed rate, or a line search that shrinks candidates until they decrease enough.",
+            "source": "vertex",
+            "chunkIds": []
+          },
+          {
+            "text": "Stop when the gradient norm is small; if iterates bounce or climb, revisit the step size before anything else.",
+            "source": "vertex",
+            "chunkIds": []
+          }
+        ],
+        "pitfalls": [
+          {
+            "text": "The direction only describes the slope close to where you are; a large step can still land uphill on the other side of the valley.",
+            "source": "vertex",
+            "chunkIds": []
+          },
+          {
+            "text": "Push alpha too far and gd diverges past the minimum instead of shrinking toward it.",
+            "source": "notes",
+            "chunkIds": [
+              "c2"
+            ]
+          }
+        ],
+        "notesGaps": [
+          "No step-size selection rule is connected to gd - the one Armijo line elsewhere is a bare note to revise.",
+          "The convex-convergence claim is stated without its conditions or proof."
+        ],
+        "takeaway": "The direction tells you where to go. Step size controls how far you go. Armijo checks for sufficient decrease.",
+        "diagramMermaid": null,
+        "examQuestion": {
+          "q": "Why can a gradient descent step taken in a downhill direction still increase the objective, and what would you change first?",
+          "modelAnswer": "The negative gradient is a local linear model of the slope; a large step leaves the region where that model holds and can land higher on the far side. Shrink the candidate step (or add a line search) before changing the direction.",
+          "source": "vertex"
+        },
+        "meta": {
+          "provider": "curated",
+          "model": "curated",
+          "at": "2026-11-10T23:40:00.000Z"
+        }
+      }
     },
     {
       "id": "t2",
-      "name": "Newton's method",
+      "name": "Newton’s method",
       "aliases": [
         "Newton method",
+        "Newton's method",
         "Newton-Raphson",
         "Newton–Raphson",
         "Newton Raphson"
@@ -84,158 +145,79 @@
         "status": "covered",
         "score": 0.82,
         "chunkIds": [
-          "c3",
-          "c4"
+          "c2",
+          "c3"
         ]
       },
       "rating": "kinda",
       "after": "got",
       "lesson": {
-        "oneLiner": "Newton's method solves f(x) = 0 (or grad f = 0) by replacing f with its tangent line at each step and jumping to that line's root: x_{k+1} = x_k - f(x_k)/f'(x_k).",
-        "why": "Gradient descent only knows the slope at one point, so it creeps. Newton also uses curvature, so correct digits double each step near the root. Your notes have the derivation but stop before any numbers, so here is one, computed.",
-        "analogy": "Blindfolded gd feels the slope and shuffles; Newton looks at the whole tangent line under its feet and leaps to where that line says zero is.",
+        "oneLiner": "A local curvature model helps choose the update.",
+        "why": "Your notes derive the root version and start the minimization version; this card finishes the thought and marks the one distinction examiners probe: Newton uses curvature directly, BFGS updates an approximation.",
+        "analogy": "Gradient descent feels the slope and shuffles; Newton reads the whole local bowl under its feet and steps toward its bottom.",
         "steps": [
           {
-            "text": "Linearize f at x_k: the tangent line is f(x_k) + f'(x_k)(x - x_k).",
+            "text": "Use the gradient and local curvature to choose an update.",
+            "source": "notes",
+            "chunkIds": [
+              "c2"
+            ]
+          },
+          {
+            "text": "In one dimension the Newton update divides the derivative by the second derivative when that curvature is usable.",
+            "source": "notes",
+            "chunkIds": [
+              "c2"
+            ]
+          },
+          {
+            "text": "For minimization apply Newton to grad f(x) = 0; the Jacobian of grad f is the Hessian H.",
             "source": "notes",
             "chunkIds": [
               "c3"
             ]
           },
           {
-            "text": "Solve the tangent for its root: x_{k+1} = x_k - f(x_k)/f'(x_k).",
-            "source": "notes",
-            "chunkIds": [
-              "c3"
-            ]
-          },
-          {
-            "text": "Repeat until |f(x_k)| or the step size is below tolerance.",
-            "source": "vertex",
-            "chunkIds": []
-          },
-          {
-            "text": "For minimization apply it to g = grad f; the Jacobian of g is the Hessian H(x_k), giving x_{k+1} = x_k - H(x_k)^{-1} grad f(x_k).",
-            "source": "notes",
-            "chunkIds": [
-              "c4"
-            ]
-          },
-          {
-            "text": "Near a simple root the error obeys e_{k+1} = C * e_k^2 (C = f''/2f' at the root), so convergence is quadratic.",
+            "text": "Near the solution the quadratic model converges much faster than a first-order step; far from it, the model stops describing reality.",
             "source": "vertex",
             "chunkIds": []
           }
         ],
         "pitfalls": [
           {
-            "text": "The update divides by f'(x_k); a zero slope (or singular Hessian) breaks the step.",
+            "text": "Newton is only local: a bad x0 can jump to another root or blow up - your own notes warn about this.",
             "source": "notes",
             "chunkIds": [
-              "c3"
+              "c2"
             ]
           },
           {
-            "text": "Convergence is only local: a bad x0 can jump to another root or blow up.",
-            "source": "notes",
-            "chunkIds": [
-              "c3"
-            ]
-          },
-          {
-            "text": "In n dimensions you re-invert an n x n Hessian every step. Your notes call this 'total pain' and stop. BFGS is the fix.",
-            "source": "notes",
-            "chunkIds": [
-              "c4"
-            ]
-          },
-          {
-            "text": "Far from the root, undamped Newton overshoots; practitioners damp it with a line search.",
+            "text": "In n dimensions Newton re-inverts the full H every step; unusable curvature (a singular H) breaks the update.",
             "source": "vertex",
             "chunkIds": []
           }
         ],
         "notesGaps": [
-          "The derivation is cut off mid-sentence: M_k as a cheap H^{-1} update is started but never finished (that is the quasi-Newton idea).",
-          "No worked numerical example of Newton anywhere in the notes; the exam will ask for exactly that.",
-          "The notes never state a stopping rule or how many digits the answer has."
+          "The minimization derivation stops mid-thought - the cheap curvature update (the quasi-Newton idea) is never finished.",
+          "No worked numerical example of Newton appears anywhere in the notes."
         ],
-        "trace": {
-          "title": "Newton on f(x) = x^2 - 2 (a square root), start x0 = 1.5",
-          "code": "function run() {\n  var round4 = function (v) { return Math.round(v * 10000) / 10000; };\n  var columns = [\"k\", \"x_k\", \"f(x_k)\", \"f'(x_k)\", \"x_{k+1}\"];\n  var rows = [];\n  var x = 1.5;\n  for (var k = 0; k < 5; k++) {\n    var f = x * x - 2;\n    var fp = 2 * x;\n    var xn = x - f / fp;\n    rows.push([k, round4(x), round4(f), round4(fp), round4(xn)]);\n    x = xn;\n  }\n  var answer = \"sqrt(2) = 1.4142 to 4 decimals; Newton's quadratic convergence gets there by k = 2.\";\n  return { columns: columns, rows: rows, answer: answer };\n}",
-          "computed": true,
-          "result": {
-            "columns": [
-              "k",
-              "x_k",
-              "f(x_k)",
-              "f'(x_k)",
-              "x_{k+1}"
-            ],
-            "rows": [
-              [
-                0,
-                1.5,
-                0.25,
-                3,
-                1.4167
-              ],
-              [
-                1,
-                1.4167,
-                0.0069,
-                2.8333,
-                1.4142
-              ],
-              [
-                2,
-                1.4142,
-                0,
-                2.8284,
-                1.4142
-              ],
-              [
-                3,
-                1.4142,
-                0,
-                2.8284,
-                1.4142
-              ],
-              [
-                4,
-                1.4142,
-                0,
-                2.8284,
-                1.4142
-              ]
-            ],
-            "answer": "sqrt(2) = 1.4142 to 4 decimals; Newton's quadratic convergence gets there by k = 2."
-          },
-          "narration": [
-            "Row 0: starting at x = 1.5, f is 0.25 with slope 3, so the tangent lands us at 1.4167.",
-            "Row 1: at 1.4167 the residual drops to 0.0069 and one more tangent gives 1.4142.",
-            "Row 2: now the residual rounds to 0, and the update from 1.4142 changes nothing visible.",
-            "Row 3: x stays 1.4142 with residual 0, so we have reached the fixed point.",
-            "Row 4: repeating 1.4142 confirms the iteration has fully locked on."
-          ],
-          "takeaway": "Digits roughly double per step: by k = 2 the table already agrees on 1.4142."
-        },
-        "diagramMermaid": "flowchart TD\n  A[start x0] --> B[compute f and f-prime]\n  B --> C[x = x - f divided by f-prime]\n  C --> D{f small?}\n  D -- no --> B\n  D -- yes --> E[return x]",
+        "takeaway": "Newton uses curvature directly. BFGS updates an approximation.",
+        "diagramMermaid": null,
         "examQuestion": {
-          "q": "State the Newton-Raphson iteration and apply it to f(x) = x^2 - 2 starting from x0 = 1.5 to give sqrt(2) correct to 4 decimals.",
-          "modelAnswer": "x_{k+1} = x_k - f(x_k)/f'(x_k) = x_k - (x_k^2 - 2)/(2 x_k). x1 = 1.5 - 0.25/3 = 1.4167. x2 = 1.4167 - 0.0069/2.8333 = 1.4142. |f| is now 0 to display precision, so sqrt(2) = 1.4142 (4 d.p.).",
+          "q": "State the Newton update for minimization and explain when it should not be used.",
+          "modelAnswer": "x_{k+1} = x_k - H(x_k)^{-1} grad f(x_k), from applying Newton-Raphson to grad f = 0 with the Hessian as the Jacobian. Avoid it when curvature is unusable (H singular or indefinite) or the start is far from the solution, since convergence is only local.",
           "source": "vertex"
         },
         "meta": {
-          "provider": "bharatcode",
-          "model": "qwen-3.8-27b",
-          "at": "2026-11-10T16:22:00.000Z"
+          "provider": "curated",
+          "model": "curated",
+          "at": "2026-11-10T23:40:00.000Z"
         }
       }
     },
     {
       "id": "t3",
-      "name": "Line search (Armijo condition)",
+      "name": "Armijo line search",
       "aliases": [
         "Armijo",
         "Armijo condition",
@@ -244,7 +226,7 @@
         "sufficient decrease"
       ],
       "unit": "Unit 1 (Unconstrained Optimization)",
-      "kind": "numeric",
+      "kind": "conceptual",
       "weight": 2,
       "prereqs": [
         "t1"
@@ -253,20 +235,72 @@
         "status": "thin",
         "score": 0.48,
         "chunkIds": [
-          "c5"
+          "c4"
         ]
       },
       "rating": "kinda",
       "after": null,
-      "lesson": null
+      "lesson": {
+        "oneLiner": "Accept a candidate step when it produces sufficient decrease relative to the local slope and step size.",
+        "why": "The notes keep exactly one line about Armijo and flag the condition for revision - which is the same test Scenario B on the gradient-descent lesson asks you to reason through.",
+        "analogy": "A refund policy: not just 'did the price drop', but 'did it drop by at least the promised fraction for the distance you travelled'.",
+        "steps": [
+          {
+            "text": "Armijo = sufficient decrease.",
+            "source": "notes",
+            "chunkIds": [
+              "c4"
+            ]
+          },
+          {
+            "text": "The candidate step must beat the drop predicted by the local slope over that step - a smaller objective value alone is not the test.",
+            "source": "vertex",
+            "chunkIds": []
+          },
+          {
+            "text": "Backtracking: start at t = 1 and shrink t (e.g. halve) until the condition holds.",
+            "source": "vertex",
+            "chunkIds": []
+          }
+        ],
+        "pitfalls": [
+          {
+            "text": "Confusing 'f got smaller' with 'Armijo satisfied' - a tiny decrease can still fail the check.",
+            "source": "vertex",
+            "chunkIds": []
+          },
+          {
+            "text": "Forgetting the slope term c * t * grad f(x_k)^T d_k turns the test into plain descent with no guarantee.",
+            "source": "vertex",
+            "chunkIds": []
+          }
+        ],
+        "notesGaps": [
+          "The notes say 'Need to revise the condition' and never state the full inequality with its constants.",
+          "No worked backtracking example exists in the notes."
+        ],
+        "takeaway": "A lower objective value alone can still fail the test.",
+        "diagramMermaid": null,
+        "examQuestion": {
+          "q": "State the Armijo sufficient-decrease condition and explain why it exists.",
+          "modelAnswer": "f(x_k + t d_k) <= f(x_k) + c * t * grad f(x_k)^T d_k with c in (0,1). It exists to reject candidate steps whose drop is too small relative to the predicted linear decrease, keeping line search from accepting near-flat moves.",
+          "source": "vertex"
+        },
+        "meta": {
+          "provider": "curated",
+          "model": "curated",
+          "at": "2026-11-10T23:40:00.000Z"
+        }
+      }
     },
     {
       "id": "t4",
-      "name": "Quasi-Newton methods (BFGS)",
+      "name": "Quasi-Newton / BFGS",
       "aliases": [
         "BFGS",
         "quasi-Newton",
         "quasi Newton",
+        "Quasi-Newton methods",
         "BFGS update",
         "inverse Hessian approximation",
         "DFP"
@@ -281,177 +315,74 @@
         "status": "thin",
         "score": 0.52,
         "chunkIds": [
-          "c6"
+          "c4"
         ]
       },
       "rating": "lost",
       "after": null,
       "lesson": {
-        "oneLiner": "BFGS is Newton for minimization with the expensive part faked: instead of inverting the Hessian each step it keeps H_k ~ (inverse Hessian) and updates it with the rank-two BFGS formula from the last step's s_k and y_k.",
-        "why": "Newton's x_{k+1} = x_k - H^{-1} grad f is fast but every step needs a fresh n x n inverse, which your unfinished derivation flagged as 'total pain'. BFGS is literally how that sentence ends: the pasted formula in section 4 of your notes is this update.",
-        "analogy": "Learning a door's weight by feel: each push (s_k) and response (y_k) teaches the hinge model another bit, so you never need the spec sheet (the real Hessian).",
+        "oneLiner": "Use changes in position and gradient to update a curvature approximation.",
+        "why": "Your notes paste the BFGS formula with zero intuition and the Newton derivation breaks off exactly where this update should continue it - this card is the sentence your notes never finished.",
+        "analogy": "Learning a door's weight by feel: each push and response teaches the model another bit, so you never need the spec sheet (the real Hessian).",
         "steps": [
           {
-            "text": "Start from x_0 with the inverse-Hessian guess H_0 = I.",
+            "text": "BFGS updates a Hessian approximation using changes in position and gradient.",
             "source": "notes",
             "chunkIds": [
-              "c6"
+              "c4"
             ]
           },
           {
-            "text": "Take the direction d_k = -H_k * grad f(x_k); a positive-definite H_k makes it descent.",
+            "text": "The notes paste s_k and y_k as the position change and the gradient change inside the update formula.",
+            "source": "notes",
+            "chunkIds": [
+              "c4"
+            ]
+          },
+          {
+            "text": "Keep H_k as an inverse-curvature stand-in and re-fit it each step instead of inverting the true H every step.",
             "source": "vertex",
             "chunkIds": []
           },
           {
-            "text": "Pick the step t_k by line search, e.g. the Armijo backtracking rule in your notes (exact minimizer on a quadratic).",
-            "source": "notes",
-            "chunkIds": [
-              "c5"
-            ]
-          },
-          {
-            "text": "From the new point form s_k = x_{k+1} - x_k and y_k = g_{k+1} - g_k (g = grad f).",
-            "source": "notes",
-            "chunkIds": [
-              "c6"
-            ]
-          },
-          {
-            "text": "Update H_{k+1} with the BFGS formula using rho_k = 1/(y_k^T s_k).",
-            "source": "notes",
-            "chunkIds": [
-              "c6"
-            ]
+            "text": "Require y_k^T s_k > 0 (a decent line search helps) so the search direction stays downhill.",
+            "source": "vertex",
+            "chunkIds": []
           }
         ],
         "pitfalls": [
           {
-            "text": "If y_k^T s_k is not positive the update loses positive definiteness and d_k can stop pointing downhill.",
-            "source": "notes",
-            "chunkIds": [
-              "c6"
-            ]
-          },
-          {
-            "text": "H_k approximates the INVERSE Hessian (the slide's version); the other form updates H ~ curvature and reads 'terms swapped' - that is DFP, check before quoting.",
+            "text": "Reading the formula as magic: each term encodes one secant observation - the update reuses information from earlier steps.",
             "source": "vertex",
             "chunkIds": []
           },
           {
-            "text": "Without a decent line search the curvature condition fails and BFGS blows up; superlinear convergence is not automatic.",
+            "text": "Quoting DFP and BFGS interchangeably - your 'terms swapped' note is the other rank-two update; check before citing.",
             "source": "vertex",
             "chunkIds": []
           }
         ],
         "notesGaps": [
-          "Zero intuition in the notes: nothing says H_k stands in for the inverse Hessian or why that keeps Newton's speed.",
-          "s_k and y_k are pasted with no meaning (step and gradient change) and no link to the secant equation from section 2.",
-          "No worked example, and no statement of superlinear convergence."
+          "Only the pasted formula is recorded; nothing says what H_k approximates or why y^T s > 0 matters.",
+          "No convergence statement and no worked example."
         ],
-        "trace": {
-          "title": "Two BFGS steps on f(x) = x1^2 + x2^2/2 - 2 x1 - x2 (min at (1, 1))",
-          "code": "function run() {\n  var r = function (v) { return Math.round(v * 10000) / 10000; };\n  var mv = function (m, v) { return [m[0][0] * v[0] + m[0][1] * v[1], m[1][0] * v[0] + m[1][1] * v[1]]; };\n  var dot = function (a, b) { return a[0] * b[0] + a[1] * b[1]; };\n  var A = [[2, 0], [0, 1]];\n  var b = [2, 1];\n  var H = [[1, 0], [0, 1]];\n  var x = [0, 0];\n  var rows = [];\n  for (var k = 0; k < 3; k++) {\n    var g = [A[0][0] * x[0] + A[0][1] * x[1] - b[0], A[1][0] * x[0] + A[1][1] * x[1] - b[1]];\n    var d = [-H[0][0] * g[0] - H[0][1] * g[1], -H[1][0] * g[0] - H[1][1] * g[1]];\n    var t = k < 2 ? -dot(d, g) / dot(d, mv(A, d)) : 0;\n    var xNew = [x[0] + t * d[0], x[1] + t * d[1]];\n    rows.push([k, [r(x[0]), r(x[1])], [r(g[0]), r(g[1])], [r(d[0]), r(d[1])],\n      k < 2 ? r(t) : \"-\", [r(H[0][0]), r(H[0][1]), r(H[1][1])]]);\n    if (k === 2) break;\n    var gNew = [A[0][0] * xNew[0] + A[0][1] * xNew[1] - b[0], A[1][0] * xNew[0] + A[1][1] * xNew[1] - b[1]];\n    var s = [xNew[0] - x[0], xNew[1] - x[1]];\n    var y = [gNew[0] - g[0], gNew[1] - g[1]];\n    var rho = 1 / dot(y, s);\n    var yH = [y[0] * H[0][0] + y[1] * H[1][0], y[0] * H[0][1] + y[1] * H[1][1]];\n    var W = [[H[0][0] - rho * s[0] * yH[0], H[0][1] - rho * s[0] * yH[1]],\n             [H[1][0] - rho * s[1] * yH[0], H[1][1] - rho * s[1] * yH[1]]];\n    var z = mv(W, y);\n    H = [[W[0][0] - rho * z[0] * s[0] + rho * s[0] * s[0], W[0][1] - rho * z[0] * s[1] + rho * s[0] * s[1]],\n         [W[1][0] - rho * z[1] * s[0] + rho * s[1] * s[0], W[1][1] - rho * z[1] * s[1] + rho * s[1] * s[1]]];\n    x = xNew;\n  }\n  var answer = \"BFGS with exact line search hits the minimizer x = (1, 1) of f = x1^2 + x2^2/2 - 2 x1 - x2 after only 2 updates.\";\n  return { columns: [\"k\", \"x_k\", \"grad f(x_k)\", \"d_k = -H_k g_k\", \"t_k\", \"H_k (h11, h12, h22)\"], rows: rows, answer: answer };\n}",
-          "computed": true,
-          "result": {
-            "columns": [
-              "k",
-              "x_k",
-              "grad f(x_k)",
-              "d_k = -H_k g_k",
-              "t_k",
-              "H_k (h11, h12, h22)"
-            ],
-            "rows": [
-              [
-                0,
-                [
-                  0,
-                  0
-                ],
-                [
-                  -2,
-                  -1
-                ],
-                [
-                  2,
-                  1
-                ],
-                0.5556,
-                [
-                  1,
-                  0,
-                  1
-                ]
-              ],
-              [
-                1,
-                [
-                  1.1111,
-                  0.5556
-                ],
-                [
-                  0.2222,
-                  -0.4444
-                ],
-                [
-                  -0.1235,
-                  0.4938
-                ],
-                0.9,
-                [
-                  0.5062,
-                  -0.0247,
-                  1.0988
-                ]
-              ],
-              [
-                2,
-                [
-                  1,
-                  1
-                ],
-                [
-                  0,
-                  0
-                ],
-                [
-                  0,
-                  0
-                ],
-                "-",
-                [
-                  0.5,
-                  0,
-                  1
-                ]
-              ]
-            ],
-            "answer": "BFGS with exact line search hits the minimizer x = (1, 1) of f = x1^2 + x2^2/2 - 2 x1 - x2 after only 2 updates."
-          },
-          "narration": [
-            "Row 0: at (0, 0) the gradient is (-2, -1); with H = (1, 0, 1) the direction is (2, 1) and exact line search steps t = 0.5556.",
-            "Row 1: from (1.1111, 0.5556) the gradient (0.2222, -0.4444) times the updated H = (0.5062, -0.0247, 1.0988) bends the direction to (-0.1235, 0.4938) and t = 0.9.",
-            "Row 2: x lands exactly on (1, 1), the gradient is (0, 0), and H has settled at (0.5, 0, 1) - the inverse of the quadratic's matrix, never computed directly."
-          ],
-          "takeaway": "Two updates, two dimensions, exact minimum: on quadratics BFGS rebuilds the inverse Hessian (0.5, 0, 1) as well as Newton would."
-        },
-        "diagramMermaid": "flowchart TD\n  A[start x0, H = I] --> B[d = -H times grad]\n  B --> C[line search t]\n  C --> D[update x]\n  D --> E[BFGS update H from s and y]\n  E --> F{grad small?}\n  F -- no --> B\n  F -- yes --> G[done]",
+        "takeaway": "The update reuses information from earlier steps.",
+        "diagramMermaid": null,
         "examQuestion": {
-          "q": "Write the BFGS inverse-Hessian update, define s_k and y_k, and state why H_0 = I plus two updates solve any 2 x 2 quadratic exactly.",
-          "modelAnswer": "H_{k+1} = (I - rho_k s_k y_k^T) H_k (I - rho_k y_k s_k^T) + rho_k s_k s_k^T, rho_k = 1/(y_k^T s_k), s_k = x_{k+1} - x_k, y_k = g_{k+1} - g_k. On a quadratic, exact line search makes each update satisfy the secant equation H_{k+1} y_k = s_k; after n = 2 independent steps H spans the whole curvature, so x_2 is the minimizer (trace: (1, 1) with gradient (0, 0)).",
+          "q": "In one paragraph: what does the BFGS update replace in Newton's method, and what information does it use?",
+          "modelAnswer": "BFGS replaces the per-step inversion of the true Hessian with an update to an inverse-Hessian approximation H_k, built from the observed change in position s_k = x_{k+1} - x_k and change in gradient y_k = g_{k+1} - g_k, keeping the secant relation H_{k+1} y_k = s_k.",
           "source": "vertex"
         },
         "meta": {
-          "provider": "bharatcode",
-          "model": "qwen-3.8-27b",
-          "at": "2026-11-10T16:22:00.000Z"
+          "provider": "curated",
+          "model": "curated",
+          "at": "2026-11-10T23:40:00.000Z"
         }
       }
     },
     {
       "id": "t5",
-      "name": "Gram-Schmidt orthogonalization",
+      "name": "Gram–Schmidt",
       "aliases": [
         "Gram-Schmidt",
         "Gram–Schmidt",
@@ -473,12 +404,12 @@
       "rating": "lost",
       "after": null,
       "lesson": {
-        "oneLiner": "Gram-Schmidt turns independent vectors into an orthogonal set by subtracting, one vector at a time, its projections onto everything kept so far, then normalizes to get an orthonormal set.",
-        "why": "It is the hand-computation route to an orthonormal basis and QR factorization, used for least squares and subspace geometry. Your notes do not cover Unit 2 at all, so every line here is added by Vertex.",
-        "analogy": "Picking ingredients for a tasting menu: each new one keeps only the flavour no earlier ingredient already brought, so nothing is a repeat.",
+        "oneLiner": "Build orthogonal directions by subtracting projections onto directions you already built.",
+        "why": "No matching passage in these notes - Unit 2 was never opened, so every line here is a Vertex explanation and the fastest place to bank easy marks.",
+        "analogy": "Tasting-menu pairing: each new dish keeps only the flavour no earlier dish already brought, so nothing is a repeat.",
         "steps": [
           {
-            "text": "Keep the first vector: u_1 = v_1; normalize to q_1 = u_1 / |u_1|.",
+            "text": "Keep the first vector, normalize it: q_1 = v_1 / ||v_1||.",
             "source": "vertex",
             "chunkIds": []
           },
@@ -488,121 +419,46 @@
             "chunkIds": []
           },
           {
-            "text": "Normalize each u_k to get q_k.",
-            "source": "vertex",
-            "chunkIds": []
-          },
-          {
-            "text": "Stop when all input vectors are processed; q_1..q_k is orthonormal and spans the same subspace.",
-            "source": "vertex",
-            "chunkIds": []
-          },
-          {
-            "text": "Stack the q's as columns of Q (and the coefficients as R) to get the QR factorization.",
+            "text": "Normalize u_k to q_k, then stack the q's as Q (coefficients as R) for the QR factorization.",
             "source": "vertex",
             "chunkIds": []
           }
         ],
         "pitfalls": [
           {
-            "text": "A vector already in the span of the others gives u_k = (0, 0); normalizing would divide by zero - the input was dependent.",
+            "text": "Orthogonal does not mean unit length - orthonormal means both (zero dot product and length 1).",
             "source": "vertex",
             "chunkIds": []
           },
           {
-            "text": "Classical Gram-Schmidt loses orthogonality in floating point; the modified version subtracts each piece immediately and is more stable.",
-            "source": "vertex",
-            "chunkIds": []
-          },
-          {
-            "text": "It is a cleanup of a basis, not an eigenvalue method - do not confuse it with diagonalization.",
+            "text": "A vector already in the span gives u_k = 0; normalizing would divide by zero - the input was dependent.",
             "source": "vertex",
             "chunkIds": []
           }
         ],
         "notesGaps": [
-          "Nothing about Gram-Schmidt, orthogonalization or QR is in the notes at all (Unit 2 was never opened).",
-          "No worked projection example to copy the mechanics from.",
-          "The link from this process to least squares, which examiners love, is missing too."
+          "No matching passage in these notes (Unit 2 matrices chapter was never opened)."
         ],
-        "trace": {
-          "title": "Gram-Schmidt on v1 = (1, 1), v2 = (2, 1)",
-          "code": "function run() {\n  var r = function (v) { return Math.round(v * 10000) / 10000; };\n  var dot = function (a, b) { return a[0] * b[0] + a[1] * b[1]; };\n  var v = [[1, 1], [2, 1]];\n  var us = [];\n  var rows = [];\n  for (var k = 0; k < v.length; k++) {\n    var proj = [0, 0];\n    for (var j = 0; j < us.length; j++) {\n      var c = dot(v[k], us[j]) / dot(us[j], us[j]);\n      proj = [proj[0] + c * us[j][0], proj[1] + c * us[j][1]];\n    }\n    var u = [v[k][0] - proj[0], v[k][1] - proj[1]];\n    us.push(u);\n    var n = Math.sqrt(dot(u, u));\n    rows.push([k + 1, [r(v[k][0]), r(v[k][1])], [r(proj[0]), r(proj[1])], [r(u[0]), r(u[1])], [r(u[0] / n), r(u[1] / n)]]);\n  }\n  var answer = \"q1 = (0.7071, 0.7071), q2 = (0.7071, -0.7071); q1 dot q2 = 0, so the pair is orthonormal.\";\n  return { columns: [\"k\", \"v_k\", \"projection removed\", \"u_k (orthogonal part)\", \"q_k (normalized)\"], rows: rows, answer: answer };\n}",
-          "computed": true,
-          "result": {
-            "columns": [
-              "k",
-              "v_k",
-              "projection removed",
-              "u_k (orthogonal part)",
-              "q_k (normalized)"
-            ],
-            "rows": [
-              [
-                1,
-                [
-                  1,
-                  1
-                ],
-                [
-                  0,
-                  0
-                ],
-                [
-                  1,
-                  1
-                ],
-                [
-                  0.7071,
-                  0.7071
-                ]
-              ],
-              [
-                2,
-                [
-                  2,
-                  1
-                ],
-                [
-                  1.5,
-                  1.5
-                ],
-                [
-                  0.5,
-                  -0.5
-                ],
-                [
-                  0.7071,
-                  -0.7071
-                ]
-              ]
-            ],
-            "answer": "q1 = (0.7071, 0.7071), q2 = (0.7071, -0.7071); q1 dot q2 = 0, so the pair is orthonormal."
-          },
-          "narration": [
-            "Row 1: v1 = (1, 1) has nothing to remove yet (projection (0, 0)), so u1 = (1, 1) and normalizing gives q1 = (0.7071, 0.7071).",
-            "Row 2: for v2 = (2, 1) we subtract the projection (1.5, 1.5) along the first direction, leaving u2 = (0.5, -0.5), which normalizes to q2 = (0.7071, -0.7071)."
-          ],
-          "takeaway": "Two vectors in, two perpendicular unit vectors out: q1 . q2 is exactly 0 and both lengths are 1."
-        },
+        "takeaway": "Orthogonal vectors have zero dot product. Orthonormal vectors also have unit length.",
         "diagramMermaid": null,
         "examQuestion": {
-          "q": "Apply the Gram-Schmidt process to v1 = (1, 1) and v2 = (2, 1); give the orthogonal vectors and the orthonormal pair, verifying orthogonality.",
-          "modelAnswer": "u1 = v1 = (1, 1); q1 = u1/sqrt(2) = (0.7071, 0.7071). v2.u1 = 3 and u1.u1 = 2, so u2 = v2 - (3/2) u1 = (0.5, -0.5); q2 = u2/(1/sqrt(2)) = (0.7071, -0.7071). Check: u1.u2 = 1(0.5) + 1(-0.5) = 0 and q1.q2 = 0, |q1| = |q2| = 1.",
+          "q": "Apply the Gram-Schmidt process to v1 = (1, 1) and v2 = (2, 1) and give the orthonormal pair.",
+          "modelAnswer": "u1 = (1, 1), q1 = (0.7071, 0.7071). v2 . u1 = 3, u1 . u1 = 2, so u2 = (2, 1) - 1.5(1, 1) = (0.5, -0.5), q2 = (0.7071, -0.7071). Check q1 . q2 = 0 and both lengths are 1.",
           "source": "vertex"
         },
         "meta": {
-          "provider": "bharatcode",
-          "model": "qwen-3.8-27b",
-          "at": "2026-11-10T16:22:00.000Z"
+          "provider": "curated",
+          "model": "curated",
+          "at": "2026-11-10T23:40:00.000Z"
         }
       }
     },
     {
       "id": "t6",
-      "name": "Conjugate gradient method",
+      "name": "Conjugate gradient",
       "aliases": [
         "conjugate gradient",
+        "conjugate gradient method",
         "CG",
         "Krylov subspace method"
       ],
@@ -614,12 +470,60 @@
       ],
       "coverage": {
         "status": "not_found",
-        "score": 0.06,
+        "score": 0,
         "chunkIds": []
       },
       "rating": "lost",
       "after": null,
-      "lesson": null
+      "lesson": {
+        "oneLiner": "For a symmetric positive-definite linear system, build search directions conjugate with respect to the system matrix.",
+        "why": "No matching passage in these notes, so everything here is a Vertex explanation. It reuses the gradient-descent idea but repairs the zig-zag by forbidding repeated downhill directions.",
+        "analogy": "Walking a valley with a rule that each new direction never undoes the progress made along the earlier ones.",
+        "steps": [
+          {
+            "text": "Solve Ax = b by minimizing f(x) = 0.5 x^T A x - b^T x; A must be symmetric positive-definite.",
+            "source": "vertex",
+            "chunkIds": []
+          },
+          {
+            "text": "Start along the negative gradient, then each new direction is conjugate to the previous ones with respect to A.",
+            "source": "vertex",
+            "chunkIds": []
+          },
+          {
+            "text": "Step exactly along the current direction; on an n-dimensional problem the solution is reached in at most n steps (in exact arithmetic).",
+            "source": "vertex",
+            "chunkIds": []
+          }
+        ],
+        "pitfalls": [
+          {
+            "text": "Conjugacy uses the matrix-weighted inner product d_i^T A d_j = 0, not the plain dot product.",
+            "source": "vertex",
+            "chunkIds": []
+          },
+          {
+            "text": "In floating point it is a preconditioned iteration, not a literal n-step direct solver.",
+            "source": "vertex",
+            "chunkIds": []
+          }
+        ],
+        "notesGaps": [
+          "No matching passage in these notes (Unit 2 matrices chapter was never opened)."
+        ],
+        "takeaway": "Conjugacy uses the matrix-weighted inner product.",
+        "diagramMermaid": null,
+        "examQuestion": {
+          "q": "When does conjugate gradient apply, and how does its direction rule differ from gradient descent?",
+          "modelAnswer": "CG applies to Ax = b with A symmetric positive-definite (or quadratics with such a matrix). Gradient descent repeats steepest-descent directions and zig-zags; CG makes each new direction A-conjugate to the old ones (d_i^T A d_j = 0), so each line search preserves earlier progress.",
+          "source": "vertex"
+        },
+        "meta": {
+          "provider": "curated",
+          "model": "curated",
+          "at": "2026-11-10T23:40:00.000Z"
+        }
+      }
     }
   ]
 }

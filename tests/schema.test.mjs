@@ -124,11 +124,14 @@ export const cases = [
     },
   },
   {
-    name: "validateLesson accepts a conforming numeric lesson",
+    name: "validateLesson accepts a conforming lesson — trace is optional (Addendum v3)",
     fn: () => {
       assert.equal(validateLesson(goodLesson(), "numeric"), true);
-      const conceptual = goodLesson({ trace: null });
-      assert.equal(validateLesson(conceptual, "conceptual"), true);
+      assert.equal(validateLesson(goodLesson({ trace: null }), "numeric"), true);
+      const withoutTrace = goodLesson();
+      delete withoutTrace.trace;
+      assert.equal(validateLesson(withoutTrace, "numeric"), true, "numeric no longer requires a trace");
+      assert.equal(validateLesson(withoutTrace, "conceptual"), true);
     },
   },
   {
@@ -138,18 +141,6 @@ export const cases = [
       sixSteps.steps = Array.from({ length: 6 }, (_, i) => item("step " + i, "vertex", []));
       assert.ok(validateLesson(sixSteps, "conceptual").some((e) => /at most 5/.test(e)));
 
-      const manyRows = goodLesson();
-      manyRows.trace.result.rows = Array.from({ length: 9 }, (_, i) => [i, i]);
-      assert.ok(validateLesson(manyRows, "numeric").some((e) => /at most 8 rows/.test(e)));
-
-      const ragged = goodLesson();
-      ragged.trace.result.rows = [[0, 1, 2]];
-      assert.ok(validateLesson(ragged, "numeric").some((e) => /cells but 2 columns/.test(e)));
-
-      const noTrace = goodLesson({ trace: null });
-      assert.ok(validateLesson(noTrace, "numeric").some((e) => /trace/.test(e)));
-      assert.equal(validateLesson(noTrace, "conceptual"), true);
-
       const noExam = goodLesson();
       delete noExam.examQuestion;
       assert.ok(validateLesson(noExam, "conceptual").some((e) => /examQuestion/.test(e)));
@@ -158,13 +149,23 @@ export const cases = [
       badSource.steps = [item("x".repeat(3), "wikipedia", [])];
       assert.ok(validateLesson(badSource, "conceptual").some((e) => /source/.test(e)));
 
-      const badTraceShape = goodLesson();
-      badTraceShape.trace.code = "";
-      assert.ok(validateLesson(badTraceShape, "numeric").some((e) => /trace\.code/.test(e)));
+      const noWhy = goodLesson();
+      noWhy.why = "";
+      assert.ok(validateLesson(noWhy, "conceptual").some((e) => /why/.test(e)));
 
-      const noAnswer = goodLesson();
-      delete noAnswer.trace.result.answer;
-      assert.ok(validateLesson(noAnswer, "numeric").some((e) => /answer/.test(e)));
+      const badMeta = goodLesson();
+      badMeta.meta = { provider: "bharatcode" };
+      assert.ok(validateLesson(badMeta, "conceptual").some((e) => /meta\./.test(e)));
+    },
+  },
+  {
+    name: "validateLesson ignores trace entirely (present-or-absent both valid)",
+    fn: () => {
+      // plan3 §6.3 / Addendum v3: trace-specific enforcement is dropped.
+      const junk = goodLesson({ trace: { code: 123, rows: "not even close" } });
+      assert.equal(validateLesson(junk, "numeric"), true);
+      assert.equal(validateLesson(goodLesson({ trace: "oops" }), "conceptual"), true);
+      assert.equal(validateLesson(goodLesson({ trace: null }), "numeric"), true);
     },
   },
   {

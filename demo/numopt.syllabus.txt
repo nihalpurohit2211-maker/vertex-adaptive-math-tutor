@@ -1,6 +1,6 @@
 Unit 1 (Unconstrained Optimization): Gradient descent
-Unit 1 (Unconstrained Optimization): Newton's method
-Unit 1 (Unconstrained Optimization): Line search (Armijo condition)
-Unit 1 (Unconstrained Optimization): Quasi-Newton methods (BFGS)
-Unit 2 (Linear Algebra): Gram-Schmidt orthogonalization
-Unit 2 (Linear Algebra): Conjugate gradient method
+Unit 1 (Unconstrained Optimization): Newton’s method
+Unit 1 (Unconstrained Optimization): Armijo line search
+Unit 1 (Unconstrained Optimization): Quasi-Newton / BFGS
+Unit 2 (Linear Algebra): Gram–Schmidt
+Unit 2 (Linear Algebra): Conjugate gradient
