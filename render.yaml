@@ -1,0 +1,17 @@
+# Render Blueprint — Vertex is a zero-build static site (hash-routed SPA,
+# no server, no env vars, no secrets). Publish the repo root as-is.
+services:
+  - type: web
+    name: vertex-exam-ready
+    runtime: static
+    buildCommand: "true"
+    staticPublishPath: "."
+    envVars: []
+    headers:
+      - path: /*.html
+        name: Cache-Control
+        value: "no-cache"
+      - path: /*.json
+        name: Cache-Control
+        value: "no-cache"
+    pullRequestPreviewsEnabled: true
