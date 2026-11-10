@@ -9,7 +9,7 @@
 
 **One-liner:** Paste your notes and syllabus. See what your notes leave out, reason through the tricky bits, and take a short revision sheet into your final study session.
 
-**Live demo (no key needed):** _TODO — Pages URL to be filled in by the human; expected `https://<owner>.github.io/vertex-exam-ready/` once GitHub Pages is enabled._ "Try the demo" opens a curated six-topic demo in under a second — no API key, **zero model requests, zero generated code executed**.
+**Live demo (no key needed):** <https://nihalpurohit2211-maker.github.io/vertex-adaptive-math-tutor/> — "Try the demo" opens a curated six-topic demo in under a second — no API key, **zero model requests, zero generated code executed**.
 
 ## What it does
 
@@ -89,4 +89,4 @@ MIT — see [LICENSE](LICENSE). © 2026 Nihal Purohit.
 
 ## Support
 
-If this saved your exam eve, **⭐ star the repo** (`vertex-exam-ready` — exact URL filled in with the live-demo link above) — stars and votes are part of how the hackathon judging works, and it genuinely helps.
+If this saved your exam eve, **⭐ star the repo** ([nihalpurohit2211-maker/vertex-adaptive-math-tutor](https://github.com/nihalpurohit2211-maker/vertex-adaptive-math-tutor)) — stars and votes are part of how the hackathon judging works, and it genuinely helps.
