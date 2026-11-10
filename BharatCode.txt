@@ -1,0 +1,1 @@
+Vertex is an adaptive math tutor. It runs on BharatCode's model API (qwen-3.8-27b) for explanations and tutoring chat.
