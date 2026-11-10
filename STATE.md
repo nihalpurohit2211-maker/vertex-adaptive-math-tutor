@@ -11,19 +11,21 @@
 ## Track status
 | Track | Scope | Status |
 |---|---|---|
-| A Engine | chunk/plan/schema/trace/check.mjs + unit tests | DONE 4687b70 — 38/38 tests, check.mjs 30/31 (only FAIL = CSP meta, Track C's last step) |
-| B LLM+store | llm/prompts/store | DONE d50b50a — 53/53 harness PASS |
-| C UI | index.html/styles.css/main/render/views | running (index.html already modified; awaiting report) |
-| D Content | demo notes/syllabus/reference/README/LICENSE/docs | DONE 172128e — 117 PASS trace re-verification |
+| A Engine | chunk/plan/check.mjs + unit tests | DONE 4687b70 (baseline); check.mjs superseded by F below |
+| B LLM+store | llm/prompts/store | DONE d50b50a → P3-E 0daea78 (30/30 harness) |
+| C/W2 UI | index/styles/main/render/views | landed & browser-verified, report pending — all §5/§10 markers evidenced (see Verified) |
+| D/F Content+validators | schema/check/demo | DONE 67a6e49 — check 35/35, tests 39/39→31/31 after trace-suite removal |
 
 ## Phase log
 - Phase 0: contracts frozen, `dev` branch created. G0 human steps outstanding (repo, key, T1–T4, T6).
-- Phase 1 mid-point: B+D committed.
-- Plan 3 goal active (22:21). Wave 1 running: Track C (Plan 2 UI, alive — files active 22:24), P3-E (store/prompts), P3-F (schema/check/demo fixture). Tag `v0-trig-mcq` created locally at 32a4471 (push pending human repo).
-- Queued: W2 UI wave (light theme §5, scenarios §3/§10 interaction contract, pin UI, 1-page print, trace surface + trace.js/worker deletion) — launches on Track C report to avoid same-file corruption (see failure log). W3: §12 QA matrix + §7 acceptance + README/submission copy from final state.
+- Plan 3 goal active (22:21). W1 (E+F) complete and committed. W2 UI wave: files fully landed and independently QA-passed; awaiting its report to commit; if it stalls, orchestrator commits the verified state.
+- Orchestrator integration fix (self, verified): removed dangling trace suite from tests/run.mjs + deleted orphan tests/trace.test.mjs after W2 deleted src/trace.js → 31/31.
+- W4 (user math request, task #7): KaTeX symbolic "Working" blocks queued, blocked-by W2 commit. W3: finish 2 partial §12 rows (real 360-px screenshot, six-card visual print preview) + README/handoff + screenshots.
 
 ## Verified working
-- Live engine (chunk.js, untuned) on F's NEW demo notes reproduces §9 exactly: covered/covered/thin/thin/not_found/not_found (GD 0.727, Newton 0.151→covered by term-share, Armijo 0.510 thin, BFGS 0.527 thin, GS 0.0, CG 0.055). All four §9 excerpts byte-for-byte present; zero GS/CG strings. 4 chunks c1..c4.
+- W3 browser QA (orchestrator, :8766, uncommitted-W2 tree — re-run post-commit): §7 judge path end-to-end PASS. §12 rows: cold start PASS (six topics §9 order, curated label, 0 pins, network = local files only → zero model requests); evidence PASS (Armijo chunk contains fixture sentence verbatim + GS no excerpt button); reasoning PASS (a2 reveal exact §3, switch→a1 reveal updates, sheet stayed 0; Scenario B focus-on-heading, reveal w/o choice); pin behaviour PASS (append, swap via Move up with boundary-disabled, reload via navigation, Remove → live region "Removed from revision sheet", localStorage revisionPins authoritative); isolation PASS (user notebook byte-identical across demo open+pin; reopen restores); import PASS (real file input; legacy trace key discarded; stale/dup pins dropped keeping first order [t1,t3]); mobile/keyboard PASS-structural (468 px: no h-scroll all 4 views; complete tab orders map+lesson; 2px ring token, 44px min-heights); print PASS-measured (six cards at 619 px A4 width = 1009 px ≤ 1032 px usable, break-inside avoid present); live no-key PASS (exact §10 sentence + "Add a key in settings"). STILL OPEN: real 360-px screenshot row; six-card visual print preview; invalid/valid-key rows need human T1–T4.
+- §10 layout contract grep-evidenced in styles.css: --focus-ring 2px, 16px gutters comment, 1120 cap, min-height/width 44px, prefers-reduced-motion.
+- Live engine (chunk.js, untuned) on F's NEW demo notes reproduces §9 exactly: covered/covered/thin/thin/not_found/not_found; check.mjs reports MATCH. All four §9 excerpts byte-for-byte present; zero GS/CG strings. 4 chunks c1..c4.
 - E DONE 0daea78 (30/30 harness): pins API (toggle/move THROW on misuse → UI must catch kind-style and route to map per §10; getPins normalizes on read), trace discarded at BOTH load and import boundaries, demo id `nb-numopt-demo` with first-open [] / reopen restores / reset re-inits, user notebooks isolated. llm.js needed no change (zero trace imports).
 - Orchestrator independently reproduced: normalizePins semantics + legacy import trace-discard in Node before E's report.
 - D: all stored trace.code re-run in node:vm == stored rows (117 PASS); notes match §8 matrix byte-wise; GS/CG lexical absence proven.
@@ -43,7 +45,7 @@
 - Submission summary draft (≤1000 chars, plan3-aligned; verify against shipped state at W3):
   "Vertex is an exam-eve study tool for students who skipped the lecture. Paste your notes and syllabus: Vertex shows which topics your notes actually explain, which they only mention, and which they miss entirely — and opens the exact note passage behind every verdict. For the shaky topics it teaches the idea in two sentences, shows what your notes don't explain, and walks you through the short decisions that trip people up (why a downhill step overshoots, why a tiny decrease still fails Armijo). You choose, change your mind, or reveal the reasoning — no scores, no quiz grind. Pin what you want to revisit: your pins build a one-page printable revision sheet for the final hour. Built on the BharatCode model API for topic mapping and explanations on your own notes. Try the curated demo instantly — no key, no network. Notes and pins stay in your browser."
 - Human checklist additions: approve deletion of retired app.js/chat.js/data/verify.mjs (classifier-blocked); fill Pages URL + repo URL in README; screenshots per docs/contents.md (orchestrator can auto-capture in W3).
-- Accepted friction (A): baked demo stores 6 chunks (D's split); live chunkNotes() merges tiny c5→c6 giving 5. Harmless: demo path never re-chunks, citations resolve against stored chunks, statuses identical. check.mjs compares statuses only.
+- Superseded (was: 6-vs-5 chunk friction): F rebuilt the notebook from actual notes — stored chunks == chunkNotes() (c1..c4), check.mjs asserts consistency.
 - Demo bake (human step 4) may not happen → Track D contingency: hand-authored demo/numopt.notebook.json with traces actually executed; README/label must call it a sample notebook if not live-baked.
 - Retired files (app.js, chat.js, data/, verify.mjs) deleted at Phase 2, after new index.html lands.
 - d9 solo; old chat.js 3000 ms timeout replaced by 60 s abort per §6.3.

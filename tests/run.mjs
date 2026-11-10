@@ -3,13 +3,11 @@
 import * as chunkSuite from "./chunk.test.mjs";
 import * as planSuite from "./plan.test.mjs";
 import * as schemaSuite from "./schema.test.mjs";
-import * as traceSuite from "./trace.test.mjs";
 
 const suites = [
   { name: "chunk", cases: chunkSuite.cases },
   { name: "plan", cases: planSuite.cases },
   { name: "schema", cases: schemaSuite.cases },
-  { name: "trace", cases: traceSuite.cases },
 ];
 
 let passed = 0;

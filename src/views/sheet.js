@@ -1,178 +1,130 @@
 /**
- * views/sheet.js — Screen 4: personalized one-page sheet from
- * buildPlan.sheetIds (≤6 topics): name, one line, algorithm, mini-trace
- * ≤4 rows, "watch out", likely question. Header with optional name + date +
- * the honest disclaimer. Buttons: Print / Save as PDF (window.print),
- * export notebook JSON (store.exportNotebook → download) and import (F25).
- * The #sheet-doc element is what the print stylesheet isolates.
+ * views/sheet.js — Screen 4 (plan3 §10): cards in store.getPins order;
+ * each card = topic name + takeaway + short distinction where the lesson
+ * supplies one. Controls per card: Move up / Move down / Remove, disabled
+ * at boundaries. Empty state is exactly "Pin a topic from any lesson to
+ * start your sheet" with a link back to the map, and "Print / Save as PDF"
+ * stays hidden in the empty state. The print stylesheet renders only the
+ * sheet title + cards (A4 portrait, black on white, ~12 mm margins, no
+ * card split across pages).
  */
 import { ROUTES } from '../contracts.js';
-import { formatTraceValue } from '../render.js';
 
-function miniTraceTable(trace) {
-  const table = document.createElement('table');
-  table.className = 'mini-trace';
-  const thead = document.createElement('thead');
-  const hr = document.createElement('tr');
-  for (const c of (trace.result.columns || [])) {
-    const th = document.createElement('th');
-    th.scope = 'col';
-    th.textContent = String(c);
-    hr.appendChild(th);
-  }
-  thead.appendChild(hr);
-  table.appendChild(thead);
-  const tbody = document.createElement('tbody');
-  for (const row of (trace.result.rows || []).slice(0, 4)) {
-    const tr = document.createElement('tr');
-    for (const cell of row) {
-      const td = document.createElement('td');
-      td.textContent = formatTraceValue(cell);
-      tr.appendChild(td);
-    }
-    tbody.appendChild(tr);
-  }
-  table.appendChild(tbody);
-  return table;
+function cardLines(topic) {
+  const lesson = topic.lesson || {};
+  const takeaway = lesson.takeaway
+    || lesson.oneLiner
+    || (Array.isArray(lesson.steps) && lesson.steps.length ? (lesson.steps[0].text || String(lesson.steps[0])) : '')
+    || 'Open the lesson to add a takeaway.';
+  const distinction = lesson.distinction
+    || (Array.isArray(lesson.pitfalls) && lesson.pitfalls.length ? (lesson.pitfalls[0].text || String(lesson.pitfalls[0])) : '')
+    || (lesson.examQuestion && lesson.examQuestion.q ? 'Revisit: ' + lesson.examQuestion.q : '');
+  return { takeaway, distinction };
 }
 
 export async function render(container, ctx) {
-  const { h, state, actions } = ctx;
-  const nb = state.notebook;
+  const { h, actions } = ctx;
+  const nb = ctx.state.notebook;
 
   if (!nb) {
     const card = h('div', { class: 'card empty-card' }, [
-      h('p', { class: 'muted', text: 'No notebook yet — your sheet is built from your ratings and gaps.' }),
+      h('p', { class: 'muted', text: 'No notebook yet — pins live on your notebook.' }),
     ]);
-    const b = h('button', { type: 'button', class: 'btn btn-accent', text: 'Go to setup' });
+    const b = h('button', { type: 'button', class: 'btn btn-primary', text: 'Go to setup' });
     b.addEventListener('click', () => ctx.navigate(ROUTES.SETUP));
     card.appendChild(b);
     container.appendChild(card);
     return;
   }
 
-  const plan = ctx.safePlan(nb);
+  const pins = actions.getPins();
   const byId = new Map(nb.topics.map((t) => [t.id, t]));
-  const sheetIds = (plan.sheetIds || []).filter((id) => byId.has(id));
-  const candidates = plan.candidates || sheetIds;
-  const overflow = candidates.filter((id) => !sheetIds.includes(id));
 
   /* ---- on-screen controls (never printed) ---- */
   const controls = h('div', { class: 'sheet-controls no-print' });
-  const back = h('button', { type: 'button', class: 'btn btn-ghost btn-sm', text: '← Plan' });
+  const back = h('button', { type: 'button', class: 'btn btn-ghost btn-sm', text: '← Coverage map' });
   back.addEventListener('click', () => ctx.navigate(ROUTES.MAP));
   controls.appendChild(back);
 
-  const printBtn = h('button', { type: 'button', class: 'btn btn-accent', id: 'btn-print', text: 'Print / Save as PDF' });
+  const printBtn = h('button', { type: 'button', class: 'btn btn-primary', id: 'btn-print', text: 'Print / Save as PDF' });
   printBtn.addEventListener('click', () => window.print());
-  controls.appendChild(printBtn);
+  if (pins.length) controls.appendChild(printBtn); // hidden in the empty state (§10)
 
-  const exportBtn = h('button', { type: 'button', class: 'btn btn-ghost', id: 'btn-export', text: 'Export notebook JSON' });
+  const exportBtn = h('button', { type: 'button', class: 'btn btn-ghost btn-sm', id: 'btn-export', text: 'Export notebook JSON' });
   exportBtn.addEventListener('click', () => actions.exportNotebook());
   controls.appendChild(exportBtn);
 
-  const importInput = h('input', { type: 'file', id: 'sheet-import', accept: '.json,application/json', 'aria-label': 'Import notebook JSON (F25)' });
+  const importInput = h('input', {
+    type: 'file', id: 'sheet-import', class: 'file-input',
+    accept: '.json,application/json', 'aria-label': 'Import notebook JSON',
+  });
   importInput.addEventListener('change', async (e) => {
     const f = e.target.files && e.target.files[0];
     if (!f) return;
-    const text = await f.text().catch(() => {
+    try {
+      const text = await f.text();
+      await actions.importNotebookText(text);
+    } catch (err) {
+      console.warn('sheet.js: import file read failed —', err.message);
       ctx.toast('Could not read that file.', 'error');
-      return null;
-    });
-    if (text !== null) await actions.importNotebookText(text);
+    }
   });
-  controls.appendChild(h('label', { class: 'file-btn file-btn-dark', for: 'sheet-import' }, 'Import notebook JSON'));
-  controls.appendChild(importInput);
-
-  const nameInput = h('input', {
-    type: 'text', id: 'sheet-name', class: 'text-input name-input',
-    placeholder: 'Your name (optional)', 'aria-label': 'Your name for the sheet header', autocomplete: 'off',
-    value: state.settings.sheetName || '',
-  });
-  const nameLine = h('p', { class: 'sheet-name-line' });
-  nameInput.addEventListener('input', () => {
-    const v = nameInput.value.trim();
-    nameLine.textContent = v ? 'Prepared for ' + v : '';
-    actions.saveSettings({ sheetName: v });
-  });
-  controls.appendChild(h('div', { class: 'name-row' }, [nameInput]));
+  const importLabel = h('label', { class: 'file-btn', for: 'sheet-import' }, ['Import notebook JSON', importInput]);
+  controls.appendChild(importLabel);
   container.appendChild(controls);
 
-  /* ---- the printable sheet document ---- */
+  /* ---- the printable document ---- */
   const doc = h('div', { class: 'sheet-doc', id: 'sheet-doc' });
-  const dateStr = new Date().toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' });
-  doc.appendChild(h('h1', { class: 'sheet-title', text: 'Vertex — crash sheet' }));
-  nameLine.textContent = state.settings.sheetName ? 'Prepared for ' + state.settings.sheetName : '';
-  doc.appendChild(nameLine);
-  doc.appendChild(h('p', { class: 'sheet-date', text: dateStr + ' · ' + ((nb.settings && nb.settings.hoursToStudy) || 3) + ' h plan · ' + nb.topics.length + ' topics mapped' }));
-  doc.appendChild(h('p', { class: 'sheet-disclaimer', text: 'Generated by Vertex from your notes; check against your textbook.' }));
+  doc.appendChild(h('h1', { class: 'sheet-title', text: 'Vertex — revision sheet' }));
 
-  if (!sheetIds.length) {
-    doc.appendChild(h('p', { class: 'sheet-empty', text: 'Nothing shaky: you rated every topic “Knew it” (or marked “Got it”). Re-rate a topic on the plan if that was too optimistic.' }));
+  if (!pins.length) {
+    const empty = h('div', { class: 'sheet-empty' }, [
+      h('p', { class: 'sheet-empty-text', text: 'Pin a topic from any lesson to start your sheet' }),
+    ]);
+    const mapLink = h('a', { class: 'accent-link', href: ROUTES.MAP, text: 'Open the coverage map' });
+    empty.appendChild(mapLink);
+    doc.appendChild(empty);
+    container.appendChild(doc);
+    return; // print button was intentionally not added above (empty state)
   }
 
-  for (const id of sheetIds) {
-    const topic = byId.get(id);
-    const lesson = topic.lesson;
-    const block = h('section', { class: 'sheet-topic' });
-    block.appendChild(h('h2', { class: 'sheet-topic-name', text: topic.name }));
-    if (!lesson) {
-      block.appendChild(h('p', { class: 'sheet-line sheet-muted', text: 'No lesson generated yet — open it once before printing to include the details.' }));
-      doc.appendChild(block);
-      continue;
-    }
-    block.appendChild(h('p', { class: 'sheet-line', text: lesson.oneLiner || '' }));
+  pins.forEach((topicId, i) => {
+    const topic = byId.get(topicId);
+    if (!topic) return; // getPins normalized — belt for re-render races
+    const { takeaway, distinction } = cardLines(topic);
 
-    if (Array.isArray(lesson.steps) && lesson.steps.length) {
-      const ol = h('ol', { class: 'sheet-steps' });
-      for (const s of lesson.steps.slice(0, 5)) {
-        ol.appendChild(h('li', {}, [
-          h('span', { text: s.text || '' }),
-          ' ',
-          h('span', { class: 'sheet-src', text: s.source === 'notes' ? '(your notes)' : '(Vertex)' }),
-        ]));
-      }
-      block.appendChild(ol);
-    }
-
-    if (lesson.trace && lesson.trace.result && Array.isArray(lesson.trace.result.rows) && lesson.trace.result.rows.length) {
-      block.appendChild(miniTraceTable(lesson.trace));
-      block.appendChild(h('p', {
-        class: 'sheet-trace-label',
-        text: lesson.trace.computed === true ? 'Computed in your browser ✓' : 'Illustrative example (not computed)',
-      }));
-    }
-
-    if (lesson.diagramMermaid) {
-      const dia = h('div', { class: 'mermaid-block sheet-diagram', dataset: { mermaidTheme: 'neutral' } });
-      block.appendChild(dia);
-      await ctx.rMermaid(dia, lesson.diagramMermaid); // removed on any failure
-    }
-
-    const pitfalls = Array.isArray(lesson.pitfalls) ? lesson.pitfalls.slice(0, 3) : [];
-    if (pitfalls.length) {
-      block.appendChild(h('p', { class: 'sheet-watchout' }, [
-        h('strong', { text: 'Watch out: ' }),
-        pitfalls.map((p) => p.text || '').filter(Boolean).join(' · '),
-      ]));
-    }
-
-    if (lesson.examQuestion && lesson.examQuestion.q) {
-      block.appendChild(h('p', { class: 'sheet-question' }, [
-        h('strong', { text: 'Likely question: ' }),
-        lesson.examQuestion.q,
-      ]));
-    }
-    doc.appendChild(block);
-  }
-
-  if (overflow.length) {
-    const names = overflow.map((id) => (byId.get(id) || {}).name).filter(Boolean);
-    doc.appendChild(h('p', { class: 'sheet-overflow' }, [
-      h('strong', { text: 'Also review: ' }),
-      names.join(' · '),
+    const cardEl = h('section', { class: 'sheet-card' });
+    cardEl.appendChild(h('h2', { class: 'sheet-card-name', text: topic.name }));
+    cardEl.appendChild(h('p', { class: 'sheet-card-takeaway', text: takeaway }));
+    if (distinction) cardEl.appendChild(h('p', { class: 'sheet-card-distinction' }, [
+      h('strong', { text: 'Remember: ' }),
+      distinction,
     ]));
-  }
+
+    const cardControls = h('div', { class: 'sheet-card-controls no-print' });
+    const up = h('button', { type: 'button', class: 'btn btn-ghost btn-sm', text: 'Move up', disabled: i === 0 });
+    up.addEventListener('click', async () => {
+      await actions.pinMove(topicId, -1);
+      ctx.rerender();
+    });
+    const down = h('button', { type: 'button', class: 'btn btn-ghost btn-sm', text: 'Move down', disabled: i === pins.length - 1 });
+    down.addEventListener('click', async () => {
+      await actions.pinMove(topicId, 1);
+      ctx.rerender();
+    });
+    const remove = h('button', { type: 'button', class: 'btn btn-ghost btn-sm', text: 'Remove' });
+    remove.addEventListener('click', async () => {
+      await actions.pinToggle(topicId);
+      ctx.announce('Removed from revision sheet');
+      ctx.rerender();
+    });
+    cardControls.appendChild(up);
+    cardControls.appendChild(down);
+    cardControls.appendChild(remove);
+    cardEl.appendChild(cardControls);
+
+    doc.appendChild(cardEl);
+  });
 
   container.appendChild(doc);
 }

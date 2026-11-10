@@ -3,9 +3,16 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="Vertex — exam-ready notes. Turn messy notes and a syllabus into a prioritized plan, missed-the-lecture lessons with computed worked examples, and a one-page personal sheet. Built on the BharatCode model API.">
-  <meta name="color-scheme" content="dark">
-  <title>Vertex — exam-ready notes</title>
+  <meta name="description" content="Vertex — exam-eve revision for engineering math. See what your notes leave out, reason through the tricky bits, and take a short revision sheet into your final study session.">
+  <meta name="color-scheme" content="light">
+  <!-- CSP (plan3 §6.8), added last once the load set was final: this app
+       loads exactly two CDN libs (marked + DOMPurify, both SRI-pinned from
+       cdn.jsdelivr.net), its own module tree, styles.css, same-origin demo
+       JSON, and the BharatCode API on the live path only. No inline
+       scripts/styles, no workers anymore (trace.js deleted), no frames. -->
+  <meta http-equiv="Content-Security-Policy"
+        content="default-src 'self'; script-src 'self' https://cdn.jsdelivr.net; style-src 'self'; img-src 'self'; connect-src 'self' https://bharatcode.ai; object-src 'none'; base-uri 'self'; form-action 'self'">
+  <title>Vertex — exam-eve revision</title>
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
@@ -15,30 +22,34 @@
     <div class="brand">
       <span class="brand-mark" aria-hidden="true">▲</span>
       <span class="brand-name">Vertex</span>
-      <span class="brand-tag">exam-ready notes</span>
+      <span class="brand-tag">exam-eve revision</span>
     </div>
     <nav class="main-nav" aria-label="Main navigation">
       <button type="button" class="nav-btn" data-route="#/setup">Setup</button>
-      <button type="button" class="nav-btn" data-route="#/map">Plan</button>
-      <button type="button" class="nav-btn" data-route="#/sheet">Sheet</button>
-      <button type="button" class="nav-btn" id="btn-settings" aria-label="Open settings">⚙ Settings</button>
+      <button type="button" class="nav-btn" data-route="#/map">Map</button>
+      <button type="button" class="nav-btn" data-route="#/sheet">
+        Sheet<span class="nav-count" id="sheet-count" hidden aria-label="pinned topics"></span>
+      </button>
+      <button type="button" class="nav-btn" id="btn-settings" aria-label="Open settings">Settings</button>
     </nav>
   </header>
 
-  <main id="root" tabindex="-1" aria-live="polite"></main>
+  <main id="root" tabindex="-1"></main>
 
   <footer class="app-footer">
-    <p class="footer-brand">Vertex — exam-ready notes</p>
-    <p class="footer-tagline">Exam-ready without picking up a pen.</p>
-    <p class="footer-note">Built on the BharatCode model API · notes stay in your browser.</p>
+    <p class="footer-brand">Vertex — exam-eve revision</p>
+    <p class="footer-note">Notes stay in your browser · BharatCode is only used to prepare lessons from your own notes.</p>
   </footer>
 
   <!-- Toast stack (main.js owns it) -->
-  <div id="toast-container" class="toast-container" role="status" aria-live="polite"></div>
+  <div id="toast-container" class="toast-container"></div>
+
+  <!-- Polite live region for pin announcements (main.js owns it) -->
+  <div id="live-region" class="sr-only" role="status" aria-live="polite"></div>
 
   <!-- Settings modal mount (views/settings.js owns it) -->
   <div id="settings-modal-root"></div>
 
-  <script type="module" src="/src/main.js"></script>
+  <script type="module" src="src/main.js"></script>
 </body>
 </html>
