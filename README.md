@@ -1,66 +1,97 @@
-# Vertex — adaptive math tutor
+# Vertex — exam-ready notes
 
-> **Every question, one step up.**
+> *Exam-ready without picking up a pen.*
 
-**NotebookLM knows your documents. Vertex knows you.**
+**NotebookLM knows your documents. Vertex knows your exam.**
+
+<!-- HERO SCREENSHOT PENDING (G4): human to add docs/setup.png — see docs/contents.md -->
+![Vertex setup screen](docs/setup.png)
+
+**One-liner:** Vertex turns your messy notes and your syllabus into a pen-free, personalized exam-eve crash course: it finds what your notes are missing, teaches only what you don't understand, and prints a one-page sheet of your gaps.
+
+**Live demo (no key needed):** _TODO(G0) — Pages URL to be filled in by the human; expected `https://<owner>.github.io/vertex-exam-ready/` once GitHub Pages is enabled._ The demo button loads a baked notebook JSON in under a second — no API key, no network calls.
 
 ## What it does
 
-- **Adaptive difficulty** — each topic starts at your level; two correct in a row push you up a tier, two wrong pull you back down.
-- **Mastery bars (0–10)** — five live bars per topic; every answer moves one bar +1 or −1, with a mastery threshold of 7.
-- **Closed-loop drill** — get a concept wrong and the quiz keeps feeding you exactly that weakest concept until its bar fills. No gaps left behind.
-- **Step-by-step "Why?" + ELI5** — every answer comes with worked steps and a simpler-explanation toggle.
-- **Hints with a real cost** — use the hint and a correct answer gains zero mastery. Comfort food for the ego, bad for the bar.
-- **Personalized revision PDF** — export a sheet built from *your own* mistakes (with solutions) plus the topic's formulas and rules.
-- **Tutor chat** — runs on BharatCode's `qwen-3.8-27b` for explanations, with instant canned fallbacks and an "offline mode" chip so the demo never breaks.
+- **Coverage map** — every syllabus topic is scored against *your* notes as Covered / Thin / Not in your notes, with the matched note snippets shown on tap ("why we think so").
+- **Gap-tagged lessons** — a two-minute "missed-the-lecture" card per shaky topic; every line is tagged *Your notes* or *Added by Vertex*, and notes-citations are verified against your text, not trusted.
+- **Computed traces** — worked examples whose numbers are computed by sandboxed code in your browser (badge: "Computed in your browser ✓"), never guessed by the model; narration is written after the numbers and may only reuse them.
+- **One-tap ratings + a deterministic plan** — tap Knew it / Kind of / No idea; the plan (order, minutes per topic, prerequisites first) is a fixed formula over your ratings, your time budget and topic weights — reproducible, not model-vibes.
+- **Printable gap sheet** — one A4 page of only the topics you don't know: one-liner, algorithm, mini-trace, watch-outs, likely question. Print → Save as PDF.
 
-![Vertex](screenshot.png)
+## How it differs from NotebookLM (honest)
 
-## Run
+NotebookLM already does a lot of "study from your documents". We are not pretending otherwise — the moat is the exam-first *workflow*:
 
-Open `index.html` — no setup, no build step, no dependencies. Just double-click it.
+| Capability | NotebookLM | Vertex |
+|---|---|---|
+| Quizzes, flashcards, tutor-style Learning Guide | ✅ yes | deliberately not built (quiz grind is what we remove) |
+| Audio/video overviews of sources | ✅ yes | ❌ not built (cut from v1) |
+| Grounded answers with citations | ✅ yes | ✅ yes, **plus citations are machine-checked against your notes** and demoted if they don't hold |
+| **Syllabus coverage map** (what your notes miss vs the actual exam syllabus) | ❌ | ✅ |
+| **Computed worked examples** (numbers by code, not by the LLM) | ❌ | ✅ |
+| **Deterministic time-budget plan** with prerequisite ordering + one-tap self-rating | ❌ | ✅ |
+| **One-page personal gap sheet** for the exam eve | partly (study guides) | ✅, print-first |
 
-Add your BharatCode API key in Settings — stored only in your browser (localStorage), never committed or logged. Without a key the app is fully usable: the tutor chat answers from curated offline fallbacks.
+## How it works
 
-## How the engine works (tech note)
+```
+ notes + syllabus
+      │  topic map (BharatCode)          ┌─ coverage: BM25-lite chunk scoring
+      ▼                                  ▼
+ [topics, aliases, weights, prereqs] ──► Covered / Thin / Not in your notes
+      │
+      ▼  lesson (1 call, top chunks only) ──► steps tagged notes|vertex + gaps
+      ▼
+ trace code ──► sandboxed worker run (2 s timeout, static scan) ──► table
+      ▼
+ table ──► narration (separate call; may only reuse table numbers)
+      ▼
+ ratings + hours ──► deterministic plan ──► printable gap sheet
+```
 
-The core is a **deterministic mastery engine — the LLM is never in the quiz loop**.
-Mastery is an integer 0–10 per concept; each answer moves it ±1 (clamped), and ≥7 means mastered.
-In-session difficulty moves ±1 after 2 correct / 2 wrong in a row.
-The drill loop always selects the lowest-scoring unmastered concept and serves its hardest eligible unasked question.
-The LLM only writes "Why?" explanations and tutor chat, both with canned fallbacks; all quiz answers are curated and re-derived twice, so they are never wrong.
+## How it uses the BharatCode model API
 
-## 90-second demo
+Vertex is built for the [BharatCode](https://bharatcode.ai) model API — OpenAI-compatible chat completions at `https://bharatcode.ai/api/model/v1`, models `qwen-3.8-27b` and `deepseek-v4.1-flash`. BharatCode does the three LLM jobs: topic mapping, lesson generation, and narration of computed tables. Keys are bring-your-own and **free for students with `.ac.in` / `.edu.in` emails** (subject to the provider's usage limits) — exactly the students Vertex is for. Model output is hardened: fences/`<think>` stripped, first balanced JSON extracted, schema-validated, one retry with the validation error fed back.
 
-1. Open `index.html` — the dashboard is auto-seeded: streak 4, mastery bars at 6 / 6 / 6 / 9 / 9.
-2. Start the Trigonometry quiz and answer right, right — two bars hit 7 and turn green.
-3. Answer two questions wrong on purpose — the bars fall red and the drill **locks onto SOH-CAH-TOA**, feeding it only that concept.
-4. Answer three in a row right — the bar refills to 7 and you get the mastered screen.
-5. Export your revision PDF — it is built from the mistakes you just made.
-6. Ask the tutor chat one question (works with no API key via the offline fallback).
+## Keys & privacy
 
-## Files
+- Your notes **stay in your browser** (localStorage, guarded with try/catch + in-memory fallback). Vertex has no accounts and no server database.
+- Notes excerpts are sent **only to the model provider you choose in Settings**, to generate lessons. Check that provider's data terms.
+- API keys are kept in `sessionStorage` (gone when the tab closes) unless you tick "Remember on this device". Keys are never logged, never rendered into DOM attributes, never committed.
+- The demo notebook needs **no key at all** and makes **no network calls**.
 
-| File | What's in it |
-|---|---|
-| `index.html` | All views, settings modal, print area |
-| `styles.css` | Dark theme, orange accent, responsive, print stylesheet |
-| `app.js` | Mastery engine, state machine, rendering, persistence |
-| `chat.js` | BharatCode API client + canned offline fallback (3 s timeout) |
-| `data/topics.js` | Topic map + full Trigonometry pack (22 curated questions) |
-| `BharatCode.txt` | Hackathon-required project description |
-| `verify.mjs` | Dev-only contract checker (not loaded by the app) |
+## Run locally
 
-Contract checks: run `node verify.mjs` from the repo root — it validates the schema, the seed math, and simulates the full 7-tap demo arc independently.
+ES modules need an HTTP origin (opening `index.html` from `file://` will not work):
 
-## Privacy
+```bash
+python -m http.server 8765     # or: node scripts/serve.mjs
+# then open http://localhost:8765
+```
 
-Everything stays in your browser's localStorage (scores, streak, mistake log, API key). Nothing leaves your machine except the chat request to the BharatCode API when *you* add a key.
+`scripts/check.mjs` runs the contract + data checks, including re-executing every stored trace in Node and re-scoring coverage on the demo notes.
 
-## Status
+## Demo notebook honesty
 
-Local-only build — not yet pushed or published. Intended repo: `nihalpurohit2211-maker/vertex-adaptive-math-tutor` (to be published). No live URL to announce yet.
+"Try the demo notebook" loads `demo/numopt.notebook.json`. It is currently a **sample notebook authored for the offline demo** on realistic exam-eve notes: every stored trace was executed in Node and re-verified row-by-row (see `demo/reference_numbers.md`), but the prose was authored, not baked live from the API. If the live bake (real pipeline + real BharatCode key) completes before submission, the orchestrator replaces this file with the exported JSON and this paragraph will say so.
+
+## Honest limitations
+
+- **Tuned for STEM-algorithmic topics** (algorithms, formulas, procedures). Other subjects still get coverage map + lesson + sheet, but no computed trace, and the UI says so.
+- **Lexical coverage** (BM25-lite + aliases) can miss heavy paraphrase — clicking a coverage chip shows exactly which snippets matched, so you can see why a verdict was made.
+- **Hackathon-grade sandbox**: the trace runner is a worker + API shadowing + 2 s timeout + static scan, not a hardened VM. Trace code comes only from the model you chose in your own session.
+- **The model can still be wrong.** Every computed number is code-verified, but prose is prose — check against your textbook. The sheet footer says exactly that.
+- Free-tier API limits can bite mid-session; the app degrades to retry-with-backoff messages and the no-key demo path always works.
+
+## Roadmap (coming soon)
+
+Photo/handwritten notes (vision), past-paper ingestion for exam weights, shared-key hosted mode, spaced nudges the night before and morning of the exam, Hinglish/Hindi polish, share a sheet with classmates, teacher view, subject packs beyond STEM, PWA/offline.
 
 ## License
 
-MIT.
+MIT — see [LICENSE](LICENSE). © 2026 Nihal Purohit.
+
+## Support
+
+If this saved your exam eve, **⭐ star the repo** (`vertex-exam-ready` — exact URL is filled in at G0 together with the live-demo link above) — stars and votes are part of how the hackathon judging works, and it genuinely helps.

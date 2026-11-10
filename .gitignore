@@ -1,2 +1,12 @@
 .DS_Store
 Thumbs.db
+
+# dependencies
+node_modules/
+
+# secrets — never commit keys (BharatCode / anything else)
+.env
+*.key
+secrets*
+
+# demo/ must NOT be ignored (baked notebook + notes are the judge path)
