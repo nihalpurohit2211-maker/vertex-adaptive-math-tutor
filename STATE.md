@@ -9,7 +9,7 @@
 ## Track status
 | Track | Scope | Status |
 |---|---|---|
-| A Engine | chunk/plan/schema/trace/check.mjs + unit tests | modules DONE (38/38 tests); check.mjs corrupted by interruption → resumed agent repairing it |
+| A Engine | chunk/plan/schema/trace/check.mjs + unit tests | DONE 4687b70 — 38/38 tests, check.mjs 30/31 (only FAIL = CSP meta, Track C's last step) |
 | B LLM+store | llm/prompts/store | DONE d50b50a — 53/53 harness PASS |
 | C UI | index.html/styles.css/main/render/views | running (index.html already modified; awaiting report) |
 | D Content | demo notes/syllabus/reference/README/LICENSE/docs | DONE 172128e — 117 PASS trace re-verification |
@@ -32,6 +32,7 @@
 
 
 ## Notes
+- Accepted friction (A): baked demo stores 6 chunks (D's split); live chunkNotes() merges tiny c5→c6 giving 5. Harmless: demo path never re-chunks, citations resolve against stored chunks, statuses identical. check.mjs compares statuses only.
 - Demo bake (human step 4) may not happen → Track D contingency: hand-authored demo/numopt.notebook.json with traces actually executed; README/label must call it a sample notebook if not live-baked.
 - Retired files (app.js, chat.js, data/, verify.mjs) deleted at Phase 2, after new index.html lands.
 - d9 solo; old chat.js 3000 ms timeout replaced by 60 s abort per §6.3.
