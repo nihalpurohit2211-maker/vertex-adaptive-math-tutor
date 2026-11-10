@@ -23,6 +23,8 @@
 - Queued: W2 UI wave (light theme §5, scenarios §3/§10 interaction contract, pin UI, 1-page print, trace surface + trace.js/worker deletion) — launches on Track C report to avoid same-file corruption (see failure log). W3: §12 QA matrix + §7 acceptance + README/submission copy from final state.
 
 ## Verified working
+- E DONE 0daea78 (30/30 harness): pins API (toggle/move THROW on misuse → UI must catch kind-style and route to map per §10; getPins normalizes on read), trace discarded at BOTH load and import boundaries, demo id `nb-numopt-demo` with first-open [] / reopen restores / reset re-inits, user notebooks isolated. llm.js needed no change (zero trace imports).
+- Orchestrator independently reproduced: normalizePins semantics + legacy import trace-discard in Node before E's report.
 - D: all stored trace.code re-run in node:vm == stored rows (117 PASS); notes match §8 matrix byte-wise; GS/CG lexical absence proven.
 - B: llm.json repair/retry/backoff/cache/cancel + store import/export via Node harness w/ fetch stubs (53/53).
 - Demo provider convention (B): lessons matched by first user-prompt line `TOPIC: <exact name>`; installDemoData({topic_map, lessons:[{topicName,lesson,narration}]}).
