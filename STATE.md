@@ -37,6 +37,9 @@
 
 
 ## Notes
+- Submission summary draft (≤1000 chars, plan3-aligned; verify against shipped state at W3):
+  "Vertex is an exam-eve study tool for students who skipped the lecture. Paste your notes and syllabus: Vertex shows which topics your notes actually explain, which they only mention, and which they miss entirely — and opens the exact note passage behind every verdict. For the shaky topics it teaches the idea in two sentences, shows what your notes don't explain, and walks you through the short decisions that trip people up (why a downhill step overshoots, why a tiny decrease still fails Armijo). You choose, change your mind, or reveal the reasoning — no scores, no quiz grind. Pin what you want to revisit: your pins build a one-page printable revision sheet for the final hour. Built on the BharatCode model API for topic mapping and explanations on your own notes. Try the curated demo instantly — no key, no network. Notes and pins stay in your browser."
+- Human checklist additions: approve deletion of retired app.js/chat.js/data/verify.mjs (classifier-blocked); fill Pages URL + repo URL in README; screenshots per docs/contents.md (orchestrator can auto-capture in W3).
 - Accepted friction (A): baked demo stores 6 chunks (D's split); live chunkNotes() merges tiny c5→c6 giving 5. Harmless: demo path never re-chunks, citations resolve against stored chunks, statuses identical. check.mjs compares statuses only.
 - Demo bake (human step 4) may not happen → Track D contingency: hand-authored demo/numopt.notebook.json with traces actually executed; README/label must call it a sample notebook if not live-baked.
 - Retired files (app.js, chat.js, data/, verify.mjs) deleted at Phase 2, after new index.html lands.

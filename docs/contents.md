@@ -1,26 +1,22 @@
-# docs/ contents — screenshots the HUMAN must add at G4 (23:05–23:15)
+# docs/ contents — screenshots for the README (plan 3)
 
-These are the exact file names README.md references. Take them from the live
-Pages URL at 1280 px (and the mobile one at 360 px), light theme = the app's
-own dark theme, no fake data — use the demo notebook so it matches what
-judges see.
+The orchestrator captures these during Wave 3 with the built-in browser at
+http://localhost:8766 (1280 px desktop / 360 px mobile), using the curated
+demo so they match exactly what judges see. The human reviews and may
+replace with real-device shots. Light theme is the app's own palette.
 
 | File | Screen | What must be visible |
 |---|---|---|
-| `setup.png` | 1 SETUP | "Try the demo notebook" button, notes paste box, syllabus box, hours field, model chip "BharatCode · qwen-3.8-27b". Hero shot for README top. |
-| `map.png` | 2 MAP + PLAN | All six demo topics with the coverage chips: two green "Covered", two amber "Thin", "Not in your notes" on Gram–Schmidt / Conjugate gradient; minutes column and rating buttons; the "⚠ builds on Newton" prereq warning on BFGS. |
-| `lesson.png` | 3 LESSON | Quasi-Newton (BFGS) card open: "Computed in your browser ✓" badge, trace table with real numbers, "Your notes"/"Added by Vertex" tags, "Your notes don't explain…" list. |
-| `sheet-print.png` | 4 YOUR SHEET | Browser print preview (Ctrl+P) of the gap sheet: one A4 page, black on white, ≤6 topics. |
+| `setup.png` | Setup | "Try the demo" prominent (indigo primary), notes + syllabus fields below it, the three coverage-state preview chips. Hero shot for README top. |
+| `map.png` | Coverage map | All six demo topics in fixture order with text-bearing chips: green "Explained" ×2, amber "Only mentioned" ×2, rose "No match found" ×2, one row with "View excerpt" open showing the Armijo line verbatim. |
+| `lesson.png` | Gradient-descent lesson | "What would you do?" Scenario A with a choice selected (indigo) and its reveal panel + the bowl "Concept sketch" with Long jump / Shorter step paths; "Pinned for revision" state. |
+| `sheet-print.png` | Revision sheet | Print preview (Ctrl+P) with all six demo cards pinned: one A4 page, black on white, title + cards only, no controls. |
 
 Optional but recommended:
 
-- `demo.gif` (or `.webm`) — the 90-second judge script from plan §8: open live
-  URL → Try demo → map → Quasi-Newton lesson with computed table → sheet →
-  print preview → Settings shows "paste your free BharatCode key". If added,
-  put `![90-second demo](docs/demo.gif)` directly under the hero image in
-  README.md.
-- `mobile-360.png` — map screen at 360 px, proof of the no-horizontal-scroll
-  smoke test.
+- `demo.gif` — the 60-second judge walkthrough from plan 3 §8: Try demo →
+  Armijo excerpt → gradient-descent scenarios → pin → sheet → print preview.
+- `mobile-360.png` — lesson at 360 px, proof of the no-horizontal-scroll test.
 
 Do not commit screenshots that contain a real API key anywhere in frame
 (settings modal should show the masked/empty state).
