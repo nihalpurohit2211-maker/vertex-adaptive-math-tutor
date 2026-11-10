@@ -88,11 +88,11 @@ export async function render(container, ctx) {
   const wideQuery = window.matchMedia('(min-width: 900px)');
   let openTopicId = null;
   let openToggleBtn = null;
+  let openNode = null; // the one open excerpt, whether homed in a row or the panel
 
   function closeOpen() {
     if (!openTopicId) return;
-    const node = panelBody.firstChild;
-    if (node) node.remove();
+    if (openNode) { openNode.remove(); openNode = null; }
     panel.hidden = true;
     if (openToggleBtn) {
       openToggleBtn.textContent = 'View excerpt';
@@ -137,6 +137,7 @@ export async function render(container, ctx) {
     } else {
       rowEl.appendChild(node);
     }
+    openNode = node;
   }
 
   // Moving between breakpoints: re-home the one open excerpt.
@@ -145,8 +146,9 @@ export async function render(container, ctx) {
     const topic = nb.topics.find((t) => t.id === openTopicId);
     const btn = openToggleBtn;
     const row = list.querySelector('.map-row[data-topic="' + openTopicId + '"]');
-    const node = panelBody.firstChild || (row && row.querySelector('.excerpt-body'));
+    const node = openNode || panelBody.firstChild || (row && row.querySelector('.excerpt-body'));
     if (node) node.remove();
+    openNode = null;
     panel.hidden = true;
     openTopicId = null;
     openToggleBtn = null;
