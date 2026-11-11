@@ -1,92 +1,114 @@
-# Vertex — exam-ready notes
+# Vertex — your exam, understood
 
-> *Exam-ready without picking up a pen.*
-
-<!-- HERO SCREENSHOT: add docs/setup.png (see docs/contents.md), then swap this comment
-     back to: ![Vertex setup screen](docs/setup.png)
-     Kept as a comment so the repo never renders a broken image before the capture. -->
 **NotebookLM knows your documents. Vertex knows your exam.**
 
-**One-liner:** Paste your notes and syllabus. See what your notes leave out, reason through the tricky bits, and take a short revision sheet into your final study session.
+Vertex is a local-first engineering-mathematics exam-revision workspace. Paste lecture notes and a syllabus, and it shows what your notes actually explain, what they only mention, and what never appears — with the verbatim passage behind every verdict. From there: full lesson cards, a concept-and-numerical practice studio, an interactive study calendar, analytics built from real records, a searchable formula vault, and one printable A4 revision sheet built only from the pins you choose.
 
-**Live demo (no key needed):** <https://nihalpurohit2211-maker.github.io/vertex-adaptive-math-tutor/> — "Try the demo" opens a curated six-topic demo in under a second — no API key, **zero model requests, zero generated code executed**.
+This repository is a rebuild of the original [Vertex](https://github.com/nihalpurohit2211-maker/vertex-adaptive-math-tutor): the original product concept, six-topic numerical-optimization demo, coverage engine, pin model and KaTeX fallback are preserved, while the interface, routing and additional workspaces are new.
 
-## What it does
+## Run it
 
-- **Notes vs. syllabus coverage** — every syllabus topic is labelled **Explained**, **Only mentioned**, or **No match found** against *your* notes; matched rows open the exact note excerpt so you can check the verdict yourself.
-- **Missed-the-lecture lessons** — a two-minute card per topic: the idea in two sentences, what your notes say, what's missing. Exact excerpts are labelled *From your notes*; added context is labelled *Vertex explanation*.
-- **"What would you do?" walkthroughs** — short engineering decisions (e.g. gradient descent overshooting, a tiny decrease that still fails Armijo). Pick, change your mind, or reveal the reasoning directly — for reflection, not scoring. No streaks, no grades, no red failure states.
-- **Revision pins** — pin any point from a lesson; pins are yours: reorder, remove, they persist across reload, and **only your pins** build the sheet.
-- **One-page revision sheet** — pinned topics as heading + one-sentence takeaway + the key equation (typeset by KaTeX served with the app — no CDN for math; readable Unicode fallback if rendering ever fails) + up to two short notes, printed black-on-white A4 via Print → Save as PDF. The exact original passage stays on-screen behind "View original notes" and is never printed.
-
-## How it differs from NotebookLM (honest)
-
-Google's tools already offer interactive lessons, quizzes, feedback and study prioritization — we are not pretending otherwise. Vertex's value is a narrower, deliberate workflow:
-
-| Capability | NotebookLM | Vertex |
-|---|---|---|
-| Quizzes, flashcards, tutor-style guide | ✅ yes | deliberately not built (quiz grind is what we remove) |
-| Audio/video overviews | ✅ yes | ❌ cut |
-| Grounded answers with citations | ✅ yes | ✅ with excerpts shown verbatim so the verdict is checkable |
-| **Syllabus-vs-notes coverage** with three visible states | ❌ | ✅ |
-| **Short conceptual decision walkthroughs** tied to the exact gap | ❌ | ✅ (curated for the demo; reviewed content) |
-| **Student-built revision sheet from explicit pins** | partly (study guides) | ✅, print-first, one A4 page |
-
-## How it works
-
-```
- notes + syllabus
-      │  topic map (BharatCode, live path)        curated demo: bundled content
-      ▼
- [topics, aliases] ──► lexical matching over your note chunks
-      ▼                Explained / Only mentioned / No match found
- lesson: idea · your excerpt · what's missing · "What would you do?"
-      ▼
- pins (ordered, yours) ──► one-page A4 revision sheet ──► Print / Save as PDF
-```
-
-## How it uses the BharatCode model API
-
-The live path is built for the [BharatCode](https://bharatcode.ai) model API — OpenAI-compatible chat completions at `https://bharatcode.ai/api/model/v1`, models `qwen-3.8-27b` and `deepseek-v4.1-flash` — for topic mapping and short explanations on **your own** notes and syllabus. Keys are bring-your-own and **free for students with `.ac.in` / `.edu.in` emails** (subject to the provider's usage limits). Model output is hardened: fences/`<think>` stripped, first balanced JSON extracted, schema-validated, one retry with the validation error fed back; friendly retry and no-key states are preserved. The featured scenarios are reviewed content, not model output, so the demo stays consistent. **Live-path status: beta until the CORS/latency/JSON checks (T1–T4) are run with a real key.**
-
-## Keys & privacy
-
-- Your notes **stay in your browser** (localStorage, try/catch + in-memory fallback). Vertex has no accounts and no server database.
-- Notes excerpts are sent **only to the model provider you choose in Settings**, to generate lessons. Check that provider's data terms.
-- API keys live in `sessionStorage` (gone when the tab closes) unless you tick "Remember on this device". Keys are never logged, never rendered into DOM attributes, never committed.
-- The demo is fully offline: no key, no network, and it never runs generated code. Opening the demo never touches your own notebook or pins — the demo lives under its own notebook id.
-
-## Run locally
-
-ES modules need an HTTP origin (opening `index.html` from `file://` will not work):
+No build step, no npm dependencies, no database, no server runtime.
 
 ```bash
-python -m http.server 8765     # or: node scripts/serve.mjs
-# then open http://localhost:8765
+node scripts/serve.mjs          # http://localhost:8766
+# or: python -m http.server 8766
 ```
 
-`node scripts/check.mjs` runs the automated checks: required files, secret scan, HTML-safety scans, demo fixture integrity (exact excerpt text, curated statuses, zero trace code), pin normalization and legacy-notebook import safety.
+Then open <http://localhost:8766>. Set `PORT` to use another port. ES modules need an HTTP origin; `file://` will not work.
 
-## Demo honesty
+`package.json` only declares `"type": "module"` so Node can import the same files the browser does. There is nothing to install.
 
-"Try the demo" loads `demo/numopt.notebook.json` + `demo/numopt.scenarios.json`: a **curated demo** — team-reviewed lesson copy and scenarios on realistic exam-eve notes, with stored coverage verdicts. It is labelled "Curated demo" in the UI. The live engine uses the same shapes with real matching on your notes.
+## What is in the product
+
+- **Landing page** — knowledge-orbit hero, six-scene scroll narrative, live coverage and gradient-descent demos, revision-sheet and calendar previews.
+- **Local profile entry** (`#/login`) — honestly a local profile and workspace picker, not server authentication. No password, no account, no recovery service.
+- **Setup** (`#/setup`) — curated demo or your own notes + syllabus. Offline topic detection, note chunking, and lexical coverage. AI topic mapping is optional.
+- **Overview** (`#/dashboard`) — coverage stats, real planned-versus-completed study time, explained priority ordering, recent lessons and working quick actions.
+- **Coverage Intelligence** (`#/coverage`) — notebook order, one accessible verdict chip per topic, two-pane evidence on desktop and inline evidence on mobile. Every excerpt is verbatim with its chunk id.
+- **Lesson Studio** (`#/lesson/:id`) — one-liner, why it matters, analogy, ≤5 steps, source chips and citations, pitfalls, notes gaps, method flow, exam question, curated scenarios, interactive visualizations, and pin controls.
+- **Exam Practice Studio** (`#/practice`) — six question types, numerical working space, hints, staged solutions, common mistakes and reflection. No grades, streaks or leaderboards.
+- **Revision Sheet** (`#/sheet`) — topic pins and point pins, reorder/remove, collapse, reveal original notes on screen, local KaTeX rendering, Unicode fallback and A4 print styles.
+- **Study Calendar** (`#/calendar`) — month/week/day, ripple-and-particle date selection, add/complete/move/delete sessions, drag-and-drop plus keyboard move buttons, rule-based suggestions with stated reasons, and real planned/completed totals.
+- **Progress Intelligence** (`#/analytics`) — coverage donut and bars, unit distribution, 14-day activity, planned vs completed time, priority analysis, keyboard-accessible prerequisite graph and record-derived insights.
+- **Formula Vault** (`#/formulas`) — search/filter, variables, use cases, examples, copy LaTeX, pin a formula, open a related lesson, and an interactive learning-rate explorer.
+- **Settings modal** — profile, study hours, exam date, storage status, optional provider/key, remember-on-device, export/import, workspace deletion and privacy details.
+
+The curated demo uses six numerical-optimization topics and deliberately contains all three evidence states:
+
+| Topic | Coverage |
+|---|---|
+| Gradient descent | Explained |
+| Newton’s method | Explained |
+| Armijo line search | Only mentioned |
+| Quasi-Newton / BFGS | Only mentioned |
+| Gram–Schmidt | No match found |
+| Conjugate gradient | No match found |
+
+It works offline, makes zero model calls and lives under its own notebook id, so it never touches your notes, pins, calendar or settings.
+
+## Privacy and AI
+
+- Notes, topics, pins, calendar sessions, reflections and settings stay in this browser’s storage. There is no account backend, analytics service or silent upload.
+- If browser storage is unavailable, Vertex falls back to an in-memory tier for the session. Export before closing the tab.
+- AI is optional. OpenAI, Anthropic and Google Gemini adapters exist, but a request happens only after you choose a provider, store a key and press a generate action. The offline demo, lessons, coverage, calendar, analytics, formulas and sheet need none of it.
+- Keys are masked, never logged, never placed in DOM attributes, never written into notebook data, and use `sessionStorage` by default. "Remember on this device" moves them to `localStorage`. Browser-side keys cannot be protected from someone inspecting the browser; the settings UI says so.
+- Requests use a 60-second `AbortController`, one schema-feedback retry, and typed errors (`no_key`, `network`, `ratelimit`, `timeout`, `cancelled`, `invalid_json`, `bad_shape`). Batch work can be cancelled globally.
+- The three model prompts are `topic_map`, `lesson` and `narration` in `src/prompts.js`. All demand a single JSON object and use LaTeX for mathematics. Narration is forbidden from introducing new numbers.
+
+## Architecture
+
+```text
+index.html              shell, CSP, local KaTeX CSS
+styles.css              one design system + landing + app + print + reduced motion
+src/
+  app.js                hash router, public/app shells, search, notifications, settings
+  state.js              profiles, notebooks, keys, pins, calendar, reflections, fallback storage
+  core.js               pure domain helpers (validated by the self-check in Node)
+  ui.js                 DOM helpers, icons, dialogs, toasts, chips, math rendering
+  charts.js             SVG charts, prerequisite graph, optimiser widgets
+  services.js           topic detection, coverage, lesson scaffolds, optional AI
+  providers.js          OpenAI / Anthropic / Gemini adapters and typed errors
+  prompts.js            topic_map, lesson, narration
+  chunk.js, plan.js     reused original coverage and planning engines
+  seed.js               curated calendar, formulas, questions, scenarios, flows
+  pages/                landing, login, setup, dashboard, coverage, lesson, practice,
+                        sheet, calendar, analytics, formulas
+demo/                   original curated notebook + scenarios + source notes
+vendor/katex/           locally vendored KaTeX 0.16.22 (MIT)
+scripts/check.mjs       self-check; scripts/serve.mjs is the static server
+```
+
+- Hash routes: `#/`, `#/login`, `#/setup`, `#/dashboard`, `#/coverage`, `#/lesson/:id`, `#/practice`, `#/sheet`, `#/calendar`, `#/analytics`, `#/formulas`. Settings is a modal.
+- Vanilla ES modules, native hash routing, WebGL-free CSS 3D and Canvas/SVG visualizations, custom charts, native `localStorage`/`sessionStorage` with memory fallback. No framework, bundler, Tailwind runtime or external CDN.
+- The math renderer uses KaTeX vendored locally with `output: 'mathml'`, so no inline styles are needed under the CSP (`default-src 'self'`). A Unicode fallback remains if KaTeX fails to load.
+
+## Self-check
+
+```bash
+node scripts/check.mjs
+```
+
+It verifies required files, absence of secrets, demo isolation, six demo topics, all three coverage states, valid chunk citations, lesson schemas, pin normalization and duplicate prevention, calendar and formula data, practice answers, routes, prompts, CSP, no CDN, no inline scripts, key handling, timeout/cancel plumbing, print rules, the calendar interaction and reduced-motion support.
+
+## Verification performed
+
+- `node scripts/check.mjs` — 28/28 checks.
+- Headless route sweep in Chromium, WebKit and Firefox: all workspaces render, no horizontal overflow at desktop/tablet/mobile widths, direct route loading works, pins persist to the sheet, calendar creation works, print media hides chrome, MathML renders, reduced-motion mode stacks the story.
+- AI adapters were exercised end-to-end in the browser through real `fetch` calls with intercepted provider responses: OpenAI, Anthropic and Gemini request shapes, header-based keys (never URLs), single retry after invalid JSON, 401 mapping, external abort and missing-key handling. No live provider credentials were available in this environment, so no paid provider request was made.
+- The sheet was printed to PDF and inspected: black-on-white A4 output, page-break protection, footer warning, no navigation or controls.
+
+The Firefox run required the macOS 27 profile-folder workaround (`CFFIXED_USER_HOME`); that is an operating-system TCC issue, not an application issue. Actual Safari Remote Automation was unavailable, so Safari-engine coverage was done with Playwright WebKit.
 
 ## Honest limitations
 
-- **Coverage is lexical** (BM25-lite + aliases) and can miss heavy paraphrase — the excerpt shown on every matched row lets you verify each verdict.
-- **Scenarios are curated, not generated** — the two gradient-descent walkthroughs are hand-reviewed content; other topics get short reviewed cards. More cards are on the roadmap.
-- **Earlier builds computed worked examples in a browser sandbox**; that surface was removed from the product flow, so today's numbers-free lessons avoid fake precision rather than pretend at it.
-- **The model can still be wrong** on the live path — check against your textbook. The sheet footer says exactly that.
-- Free-tier API limits can bite mid-session; the app degrades to retry-with-backoff messages and the no-key demo always works.
-
-## Roadmap (coming soon)
-
-15/45-minute "short on time" queue switch, more reasoning cards (Newton vs BFGS, Gram–Schmidt), Hinglish explanations, past-paper evidence for exam weights, photo/handwritten notes (vision), shared-key hosted mode, spaced nudges, share a sheet with classmates, teacher view, PWA/offline.
+- **Coverage is lexical** (BM25-lite plus aliases). It can miss heavy paraphrase. That is why every matched verdict exposes its verbatim excerpt and the terms that matched.
+- **Short notes may only reach "Only mentioned".** The scorer deliberately requires more than a passing match before calling a topic explained; it does not pretend to understand prose.
+- **User topics without a curated demo match get an offline revision scaffold**, not a generated mathematical explanation. The scaffold is explicit about that. Adding a provider key enables optional generation with citations.
+- **Curated scenarios exist for the six demo topics.** Other workspace topics show that no scenario is attached yet rather than inventing one.
+- **A model can be wrong.** The revision sheet footer says: *Check anything here against your textbook — the model can be wrong.*
+- Import/export is local JSON, not cloud sync. There is no account recovery by design.
 
 ## License
 
-MIT — see [LICENSE](LICENSE). © 2026 Nihal Purohit.
-
-## Support
-
-If this saved your exam eve, **⭐ star the repo** ([nihalpurohit2211-maker/vertex-adaptive-math-tutor](https://github.com/nihalpurohit2211-maker/vertex-adaptive-math-tutor)) — stars and votes are part of how the hackathon judging works, and it genuinely helps.
+MIT — see [LICENSE](LICENSE). Original Vertex © 2026 Nihal Purohit; rebuild retains the original demo data and coverage/planning engines under the same license.

@@ -76,14 +76,14 @@
             ]
           },
           {
-            "text": "On f(x) = x^2 with alpha = 0.1 each gd step multiplies the error by 0.8 and marches down to the min.",
+            "text": "On f(x) = x² with α = 0.1, each step multiplies the error by 0.8 and reaches the minimum.",
             "source": "notes",
             "chunkIds": [
               "c2"
             ]
           },
           {
-            "text": "Pick the direction first (steepest descent), then choose the step size - a fixed rate, or a line search that shrinks candidates until they decrease enough.",
+            "text": "Choose the direction first, then the step size: a fixed rate or a line search that shrinks candidates.",
             "source": "vertex",
             "chunkIds": []
           },
@@ -187,7 +187,7 @@
             ]
           },
           {
-            "text": "Near the solution the quadratic model converges much faster than a first-order step; far from it, the model stops describing reality.",
+            "text": "Near the solution the quadratic model converges much faster; far away it stops describing reality.",
             "source": "vertex",
             "chunkIds": []
           }
@@ -262,7 +262,7 @@
             ]
           },
           {
-            "text": "The candidate step must beat the drop predicted by the local slope over that step - a smaller objective value alone is not the test.",
+            "text": "The candidate step must beat the drop predicted by the local slope over that step; any decrease is not enough.",
             "source": "vertex",
             "chunkIds": []
           },
@@ -441,7 +441,7 @@
             "chunkIds": []
           },
           {
-            "text": "For each later vector subtract its projections onto every q kept so far: u_k = v_k - sum_j (v_k . q_j) q_j.",
+            "text": "Subtract projections onto every q kept so far: u_k = v_k − Σ_j (v_k · q_j) q_j.",
             "source": "vertex",
             "chunkIds": []
           },
@@ -518,7 +518,7 @@
             "chunkIds": []
           },
           {
-            "text": "Step exactly along the current direction; on an n-dimensional problem the solution is reached in at most n steps (in exact arithmetic).",
+            "text": "On an n-dimensional quadratic, exact arithmetic reaches the solution in at most n steps.",
             "source": "vertex",
             "chunkIds": []
           }

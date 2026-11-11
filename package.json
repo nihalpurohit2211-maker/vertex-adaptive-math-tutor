@@ -1,0 +1,12 @@
+{
+  "name": "vertex-exam-revision",
+  "version": "3.0.0",
+  "private": true,
+  "type": "module",
+  "license": "MIT",
+  "description": "Vertex — local-first, evidence-backed engineering mathematics exam revision. No build step, no dependencies.",
+  "scripts": {
+    "check": "node scripts/check.mjs",
+    "serve": "node scripts/serve.mjs"
+  }
+}

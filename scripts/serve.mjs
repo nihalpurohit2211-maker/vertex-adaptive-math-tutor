@@ -1,5 +1,5 @@
 /**
- * serve.mjs — tiny zero-dep static file server for local dev (port 8765).
+ * serve.mjs — tiny zero-dep static file server for local dev (port 8766, override with PORT).
  * Usage: node scripts/serve.mjs
  * Serves the repo root with correct MIME types; no caching, no build step.
  */
@@ -9,7 +9,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const PORT = 8765;
+const PORT = Number(process.env.PORT) || 8766;
 
 const MIME = {
   '.html': 'text/html; charset=utf-8',
@@ -66,6 +66,6 @@ const server = http.createServer((req, res) => {
   });
 });
 
-server.listen(PORT, () => {
+server.listen(PORT, '127.0.0.1', () => {
   console.log(`Vertex dev server: http://localhost:${PORT}/  (root: ${ROOT})`);
 });
